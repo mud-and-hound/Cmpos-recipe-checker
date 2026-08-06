@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CM POS Recipe Checker</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="hero">
+    <div class="crest" aria-hidden="true">
+      <svg viewBox="0 0 60 60" class="crest-svg">
+        <circle cx="30" cy="30" r="27" class="crest-ring"/>
+        <path d="M30 14 L36 26 L48 27 L39 35 L42 47 L30 40 L18 47 L21 35 L12 27 L24 26 Z" class="crest-mark"/>
+      </svg>
+    </div>
+    <p class="eyebrow">Greyhound Cafe · CM POS</p>
+    <h1>Recipe Checker</h1>
+    <p class="lede">เทียบสูตร Recipe ในไฟล์ Excel กับข้อมูลจริงใน CM POS — ยึด CM POS เป็นความจริงหนึ่งเดียวเสมอ</p>
+  </header>
+
+  <main>
+
+    <section class="upload-section" id="uploadSection">
+      <h2 class="section-title">อัปโหลดไฟล์</h2>
+
+      <div class="orb-row">
+
+        <div class="orb-wrap">
+          <button class="orb" data-target="panel-food" aria-expanded="false" aria-controls="panel-food">
+            <svg viewBox="0 0 48 48" class="orb-icon"><path d="M14 6v14a4 4 0 0 0 4 4v18M14 6v10M18 6v10M22 6v10a4 4 0 0 1-4 4M34 6c-4 0-6 5-6 12s2 10 6 10v16" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <span class="orb-label">Food</span>
+          <div class="panel" id="panel-food">
+            <input type="file" id="file-food" accept=".xlsx" hidden>
+            <button class="panel-choose" data-for="file-food">เลือกไฟล์ .xlsx</button>
+            <p class="panel-filename" id="filename-food">ยังไม่ได้เลือกไฟล์</p>
+          </div>
+        </div>
+
+        <div class="orb-wrap">
+          <button class="orb" data-target="panel-beverage" aria-expanded="false" aria-controls="panel-beverage">
+            <svg viewBox="0 0 48 48" class="orb-icon"><path d="M14 8h20l-2 26a4 4 0 0 1-4 4H20a4 4 0 0 1-4-4L14 8Z" stroke-linejoin="round"/><path d="M14 8h20M18 16c2 2 10 2 12 0" stroke-linecap="round"/></svg>
+          </button>
+          <span class="orb-label">Beverage</span>
+          <div class="panel" id="panel-beverage">
+            <input type="file" id="file-beverage" accept=".xlsx" hidden>
+            <button class="panel-choose" data-for="file-beverage">เลือกไฟล์ .xlsx</button>
+            <p class="panel-filename" id="filename-beverage">ยังไม่ได้เลือกไฟล์</p>
+          </div>
+        </div>
+
+        <div class="orb-wrap">
+          <button class="orb" data-target="panel-dessert" aria-expanded="false" aria-controls="panel-dessert">
+            <svg viewBox="0 0 48 48" class="orb-icon"><path d="M8 20h32l-3 5a17 17 0 0 1-26 0l-3-5Z" stroke-linejoin="round"/><path d="M22 20c-2-4 1-6 0-10M27 20c2-4-1-7 0-11M20 38h8M18 33h12" stroke-linecap="round"/></svg>
+          </button>
+          <span class="orb-label">Dessert</span>
+          <div class="panel" id="panel-dessert">
+            <input type="file" id="file-dessert" accept=".xlsx" hidden>
+            <button class="panel-choose" data-for="file-dessert">เลือกไฟล์ .xlsx</button>
+            <p class="panel-filename" id="filename-dessert">ยังไม่ได้เลือกไฟล์</p>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="run-row">
+        <button class="btn-primary" id="btnRun">
+          <svg viewBox="0 0 24 24" class="btn-icon"><path d="M5 12h13M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          เช็คกับ CM POS
+        </button>
+        <p class="hint" id="statusHint"></p>
+      </div>
+    </section>
+
+    <section class="results-section" id="resultsSection" hidden>
+      <hr class="rule">
+      <h2 class="section-title">ผลการเทียบ</h2>
+
+      <div class="summary-row" id="summaryRow"></div>
+
+      <div class="toolbar">
+        <div class="filter-row" id="filterRow"></div>
+        <button class="btn-ghost" id="btnExport">
+          <svg viewBox="0 0 24 24" class="btn-icon-sm"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Export CSV
+        </button>
+      </div>
+
+      <div id="groupsContainer"></div>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>อ่านข้อมูลอย่างเดียวจาก CM POS — ไม่มีการแก้ไขข้อมูลใดๆ ผ่านหน้านี้</p>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
