@@ -222,3 +222,80 @@ document.getElementById("btnExport").addEventListener("click", async () => {
     showToast(err.message);
   }
 });
+
+// ==========================================================
+// Font Picker — โหลดฟอนต์จาก Google Fonts แบบ on-demand + จำค่าไว้
+// ==========================================================
+const FONT_STORAGE_KEY = "cmposRecipeChecker.fonts";
+const loadedFontLinks = {}; // ชื่อฟอนต์ -> <link> element กันโหลดซ้ำ
+
+function loadGoogleFont(familyName) {
+  if (loadedFontLinks[familyName]) return;
+  const urlName = familyName.trim().replace(/ /g, "+");
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = `https://fonts.googleapis.com/css2?family=${urlName}:wght@300;400;500;600;700&display=swap`;
+  document.head.appendChild(link);
+  loadedFontLinks[familyName] = link;
+}
+
+function applyFont(kind, familyName) {
+  loadGoogleFont(familyName);
+  document.documentElement.style.setProperty(
+    kind === "display" ? "--font-display" : "--font-body",
+    kind === "display" ? `'${familyName}', serif` : `'${familyName}', sans-serif`
+  );
+}
+
+function saveFontPrefs(displayFont, bodyFont) {
+  localStorage.setItem(FONT_STORAGE_KEY, JSON.stringify({ display: displayFont, body: bodyFont }));
+}
+
+function loadFontPrefs() {
+  try {
+    return JSON.parse(localStorage.getItem(FONT_STORAGE_KEY) || "null");
+  } catch {
+    return null;
+  }
+}
+
+(function initFontPicker() {
+  const btn = document.getElementById("settingsBtn");
+  const panel = document.getElementById("settingsPanel");
+  const selDisplay = document.getElementById("fontDisplay");
+  const selBody = document.getElementById("fontBody");
+  const btnReset = document.getElementById("settingsReset");
+  if (!btn || !panel) return;
+
+  // โหลดค่าที่เคยเลือกไว้ (ถ้ามี)
+  const saved = loadFontPrefs();
+  if (saved) {
+    if (saved.display) { selDisplay.value = saved.display; applyFont("display", saved.display); }
+    if (saved.body) { selBody.value = saved.body; applyFont("body", saved.body); }
+  }
+
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const isOpen = panel.classList.toggle("open");
+    btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+  });
+  document.addEventListener("click", () => panel.classList.remove("open"));
+  panel.addEventListener("click", (e) => e.stopPropagation());
+
+  selDisplay.addEventListener("change", () => {
+    applyFont("display", selDisplay.value);
+    saveFontPrefs(selDisplay.value, selBody.value);
+  });
+  selBody.addEventListener("change", () => {
+    applyFont("body", selBody.value);
+    saveFontPrefs(selDisplay.value, selBody.value);
+  });
+
+  btnReset.addEventListener("click", () => {
+    localStorage.removeItem(FONT_STORAGE_KEY);
+    selDisplay.value = "Cormorant Garamond";
+    selBody.value = "Sarabun";
+    applyFont("display", "Cormorant Garamond");
+    applyFont("body", "Sarabun");
+  });
+})();
