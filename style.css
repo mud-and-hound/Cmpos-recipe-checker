@@ -12,6 +12,10 @@
   --green: #7fb88a;
   --amber: #d8b25c;
   --orange: #d18a55;
+
+  /* ฟอนต์ — เปลี่ยนได้จากปุ่มตั้งค่ามุมขวาบน (ตั้งค่าไว้ผ่าน JS + จำใน localStorage) */
+  --font-display: 'Cormorant Garamond', serif;
+  --font-body: 'Sarabun', sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -20,7 +24,7 @@ body {
   margin: 0;
   background: radial-gradient(ellipse at top, var(--navy) 0%, var(--navy-deep) 70%);
   color: var(--ivory);
-  font-family: 'Sarabun', sans-serif;
+  font-family: var(--font-body);
   font-weight: 300;
   min-height: 100vh;
 }
@@ -34,7 +38,7 @@ body {
 .crest-ring { fill: none; stroke: var(--gold); stroke-width: 1; opacity: .55; }
 .crest-mark { fill: none; stroke: var(--gold-bright); stroke-width: 1.1; stroke-linejoin: round; }
 .eyebrow {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: var(--font-display);
   font-style: italic;
   letter-spacing: .12em;
   color: var(--gold);
@@ -42,7 +46,7 @@ body {
   margin: 18px 0 6px;
 }
 h1 {
-  font-family: 'Sarabun', sans-serif;
+  font-family: var(--font-body);
   font-weight: 600;
   font-size: 34px;
   letter-spacing: .04em;
@@ -151,7 +155,7 @@ main { max-width: 900px; margin: 0 auto; padding: 0 24px 80px; }
   background: none;
   border: 1px solid var(--gold);
   color: var(--gold-bright);
-  font-family: 'Sarabun', sans-serif;
+  font-family: var(--font-body);
   font-size: 12px;
   padding: 8px 14px;
   border-radius: 2px;
@@ -172,7 +176,7 @@ main { max-width: 900px; margin: 0 auto; padding: 0 24px 80px; }
   background: linear-gradient(120deg, var(--gold), var(--gold-bright));
   color: var(--navy-deep);
   border: none;
-  font-family: 'Sarabun', sans-serif;
+  font-family: var(--font-body);
   font-weight: 600;
   font-size: 14px;
   letter-spacing: .04em;
@@ -197,7 +201,7 @@ main { max-width: 900px; margin: 0 auto; padding: 0 24px 80px; }
   margin-bottom: 36px;
 }
 .summary-item { text-align: center; }
-.summary-num { font-size: 26px; font-weight: 600; font-family: 'Cormorant Garamond', serif; }
+.summary-num { font-size: 26px; font-weight: 600; font-family: var(--font-display); }
 .summary-label { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--slate); margin-top: 2px; }
 .s-green .summary-num { color: var(--green); }
 .s-yellow .summary-num { color: var(--amber); }
@@ -210,7 +214,7 @@ main { max-width: 900px; margin: 0 auto; padding: 0 24px 80px; }
 .filter-pill {
   border: 1px solid rgba(201,169,97,.35);
   background: none; color: var(--slate);
-  font-family: 'Sarabun', sans-serif; font-size: 12px;
+  font-family: var(--font-body); font-size: 12px;
   padding: 6px 14px; border-radius: 999px; cursor: pointer;
   transition: border-color .2s, color .2s;
 }
@@ -218,7 +222,7 @@ main { max-width: 900px; margin: 0 auto; padding: 0 24px 80px; }
 
 .btn-ghost {
   background: none; border: 1px solid rgba(201,169,97,.4); color: var(--gold-bright);
-  font-family: 'Sarabun', sans-serif; font-size: 12.5px; padding: 9px 16px; border-radius: 2px;
+  font-family: var(--font-body); font-size: 12.5px; padding: 9px 16px; border-radius: 2px;
   cursor: pointer; display: inline-flex; align-items: center; gap: 7px;
   transition: background .2s;
 }
@@ -234,7 +238,7 @@ main { max-width: 900px; margin: 0 auto; padding: 0 24px 80px; }
   font-size: 10px; letter-spacing: .1em; border: 1px solid var(--gold); color: var(--gold-bright);
   padding: 2px 8px; border-radius: 999px; margin-right: 10px;
 }
-.group-code { font-family: 'Cormorant Garamond', serif; font-size: 18px; color: var(--ivory); }
+.group-code { font-family: var(--font-display); font-size: 18px; color: var(--ivory); }
 .group-name { color: var(--slate); font-size: 13px; margin-left: 8px; }
 .group-copy {
   background: none; border: none; color: var(--gold); font-size: 12px; cursor: pointer;
@@ -248,7 +252,7 @@ table.rows th {
   color: var(--slate); padding: 6px 10px; border-bottom: 1px solid rgba(201,169,97,.15);
 }
 table.rows td { padding: 9px 10px; border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: top; }
-.code { font-family: 'Cormorant Garamond', serif; font-size: 14px; color: var(--gold-bright); }
+.code { font-family: var(--font-display); font-size: 14px; color: var(--gold-bright); }
 .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 7px; }
 .dot-green { background: var(--green); } .dot-yellow { background: var(--amber); }
 .dot-orange { background: var(--orange); } .dot-red { background: var(--red); }
@@ -272,3 +276,42 @@ footer { text-align: center; padding: 32px 24px 60px; color: var(--slate); font-
   .orb-row { gap: 36px; }
   h1 { font-size: 26px; }
 }
+
+/* ---------- Settings (Font Picker) ---------- */
+.settings-btn {
+  position: fixed; top: 22px; right: 22px; z-index: 40;
+  width: 42px; height: 42px; border-radius: 50%;
+  background: var(--navy-lift); border: 1px solid rgba(201,169,97,.4);
+  cursor: pointer; display: grid; place-items: center;
+  transition: border-color .2s, transform .2s;
+}
+.settings-btn:hover { border-color: var(--gold-bright); transform: rotate(25deg); }
+.settings-icon { width: 19px; height: 19px; fill: none; stroke: var(--gold); stroke-width: 1.6; }
+
+.settings-panel {
+  position: fixed; top: 72px; right: 22px; z-index: 40;
+  width: 260px; background: var(--navy-lift); border: 1px solid rgba(201,169,97,.4);
+  border-radius: 4px; padding: 18px;
+  opacity: 0; pointer-events: none; transform: translateY(-8px);
+  transition: opacity .2s, transform .2s;
+}
+.settings-panel.open { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.settings-title {
+  font-family: var(--font-body); font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--gold); margin: 0 0 14px;
+}
+.settings-label {
+  display: block; font-family: var(--font-body); font-size: 11px; color: var(--slate);
+  margin: 14px 0 6px;
+}
+.settings-select {
+  width: 100%; background: var(--navy-deep); color: var(--ivory);
+  border: 1px solid rgba(201,169,97,.35); border-radius: 2px; padding: 7px 8px;
+  font-family: var(--font-body); font-size: 12.5px;
+}
+.settings-reset {
+  width: 100%; margin-top: 18px; background: none; border: 1px solid rgba(201,169,97,.3);
+  color: var(--slate); font-family: var(--font-body); font-size: 11.5px; padding: 8px;
+  border-radius: 2px; cursor: pointer; transition: color .2s, border-color .2s;
+}
+.settings-reset:hover { color: var(--gold-bright); border-color: var(--gold-bright); }
