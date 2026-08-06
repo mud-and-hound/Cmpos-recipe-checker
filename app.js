@@ -1,7 +1,7 @@
 // ==========================================================
 // ตั้งค่าตรงนี้ก่อนใช้งานจริง
 // ==========================================================
-const API_BASE = "http://10.8.1.88:9009";   // backend รันจริงที่ /opt/stockmove_viewer/api (port 9009)
+const API_BASE = "https://Cmpos-recipe-checker.mobile1234.site";   // ผ่าน tunnel/reverse proxy -> localhost:9009 (https แล้ว ไม่เจอ Mixed Content)
 const API_KEY = "recipe2026check";           // ต้องตรงกับ RECIPE_API_KEY ฝั่ง backend
 
 // ==========================================================
