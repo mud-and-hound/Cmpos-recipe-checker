@@ -65,7 +65,14 @@ h1 {
 }
 
 main { max-width: 1180px; margin: 0 auto; padding: 0 24px 80px; }
-.table-scroll { overflow-x: auto; }
+.table-scroll {
+  overflow-x: auto;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  border-bottom: 1px solid rgba(201,169,97,.2);
+}
+/* ให้ thead ติดบนกล่อง scroll เสมอ เห็นหัวตารางตลอดเวลาเลื่อน */
+.table-scroll thead th { position: sticky; top: 0; background: var(--navy-deep); z-index: 2; }
 
 .section-title {
   font-size: 12px;
@@ -354,8 +361,7 @@ footer { text-align: center; padding: 32px 24px 60px; color: var(--slate); font-
 }
 .search-count { font-size: 12px; color: var(--slate); white-space: nowrap; }
 
-.scroll-sentinel { height: 1px; }
-#loadMoreHint { text-align: center; padding: 20px 0; }
-
-.row-fade-in { animation: rowFadeIn .35s ease; }
-@keyframes rowFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.fade-row {
+  transition: opacity .18s linear;
+  will-change: opacity;
+}
