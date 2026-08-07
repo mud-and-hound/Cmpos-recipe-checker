@@ -155,34 +155,51 @@ function renderGroups(groups) {
     container.innerHTML = `<p class="hint">ไม่พบรายการตามตัวกรองนี้</p>`;
     return;
   }
-  container.innerHTML = groups.map((g) => `
-    <div class="group">
-      <div class="group-head">
-        <div>
-          <span class="group-tag">${g.recipe_type}</span>
-          <span class="group-code">${g.parent_code}</span>
-          <span class="group-name">${g.parent_name || ""}</span>
-        </div>
-        <button class="group-copy" data-type="${g.recipe_type}" data-code="${g.parent_code}">คัดลอกสำหรับ Tampermonkey</button>
-      </div>
-      <table class="rows">
-        <thead>
-          <tr><th>สถานะ</th><th>Code</th><th>ค่าในไฟล์</th><th>ค่าที่ถูกต้อง</th><th>เหตุผล</th></tr>
-        </thead>
-        <tbody>
-          ${g.rows.map((r) => `
-            <tr>
-              <td><span class="dot dot-${r.status}"></span>${statusThLabel[r.status] || r.status}</td>
-              <td class="code">${r.ingredient_code}</td>
-              <td class="qty-old">${r.excel_qty} ${r.excel_unit_raw || ""}</td>
-              <td class="qty-new">${r.final_qty ?? "—"} ${r.final_unit || ""}</td>
-              <td class="note">${r.note || ""}</td>
-            </tr>
-          `).join("")}
-        </tbody>
-      </table>
+
+  // สร้างตารางยาวเดียว หน้าตาแบบไฟล์ Excel ต้นฉบับ:
+  // No. | Recipe | Name Menu | Item Code | Item Description | QTY | Small Unit | [สถานะ | ค่าที่ถูกต้อง | เหตุผล]
+  // โชว์ No./Recipe/Name Menu แค่แถวแรกของแต่ละเมนู (เว้นว่างแถวถัดไป) เหมือนไฟล์ต้นฉบับ
+  let bodyHtml = "";
+  groups.forEach((g, gi) => {
+    g.rows.forEach((r, ri) => {
+      const isFirstRow = ri === 0;
+      bodyHtml += `
+        <tr class="${isFirstRow ? "menu-start" : ""}">
+          <td class="col-no">${isFirstRow ? gi + 1 : ""}</td>
+          <td class="col-recipe">${isFirstRow ? `<span class="group-tag">${g.recipe_type}</span> <span class="code">${g.parent_code}</span>` : ""}</td>
+          <td class="col-menuname">${isFirstRow ? (g.parent_name || "") : ""}</td>
+          <td class="code">${r.ingredient_code}</td>
+          <td>${r.ingredient_desc || ""}</td>
+          <td class="qty-old">${Number(r.excel_qty).toFixed(4)}</td>
+          <td>${r.excel_unit_raw || ""}</td>
+          <td><span class="dot dot-${r.status}"></span>${statusThLabel[r.status] || r.status}</td>
+          <td class="qty-new">${r.final_qty ?? "—"} ${r.final_unit || ""}</td>
+          <td class="note">${r.note || ""}</td>
+        </tr>`;
+    });
+    // แถวว่างคั่นระหว่างเมนู (เหมือนไฟล์ Excel ต้นฉบับ) + ปุ่ม copy ต่อท้ายกลุ่ม
+    bodyHtml += `
+      <tr class="menu-gap">
+        <td colspan="7"></td>
+        <td colspan="3" style="text-align:right;">
+          <button class="group-copy" data-type="${g.recipe_type}" data-code="${g.parent_code}">คัดลอกสำหรับ Tampermonkey</button>
+        </td>
+      </tr>`;
+  });
+
+  container.innerHTML = `
+    <div class="table-scroll">
+    <table class="rows excel-style">
+      <thead>
+        <tr>
+          <th>No.</th><th>Recipe</th><th>Name Menu</th><th>Item Code</th><th>Item Description</th>
+          <th>QTY</th><th>Small Unit</th><th>สถานะ</th><th>ค่าที่ถูกต้อง</th><th>เหตุผล</th>
+        </tr>
+      </thead>
+      <tbody>${bodyHtml}</tbody>
+    </table>
     </div>
-  `).join("");
+  `;
 
   container.querySelectorAll(".group-copy").forEach((btn) => {
     btn.addEventListener("click", async () => {
