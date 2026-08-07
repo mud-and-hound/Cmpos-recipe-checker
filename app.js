@@ -8,13 +8,12 @@ const API_KEY = "recipe2026check";           // ต้องตรงกับ R
 let currentToken = null;
 let currentSummary = null;
 
-// ---------- ค้นหา + pagination + infinite scroll ----------
+// ---------- ค้นหา + หน้าต่างเลื่อนแบบ conveyor (fade ตามตำแหน่ง scroll จริง) ----------
 let allGroups = [];          // ข้อมูลทั้งหมดที่ backend ส่งมา (หลัง filter สถานะแล้ว)
 let filteredGroups = [];     // หลังผ่านช่องค้นหาอีกชั้น
-let currentPageIdx = 0;      // หน้าปัจจุบัน (นับจาก 0) สำหรับ infinite scroll
-let pageSize = 25;           // จำนวนเมนูต่อหน้า
+let pageSize = 10;           // จำนวน "แถว" ที่มองเห็นพร้อมกันในกล่อง (ความสูงกล่อง = pageSize x ความสูงแถว)
 let searchTerm = "";
-let scrollObserver = null;
+let rowFadeObserver = null;
 let searchDebounceTimer = null;
 
 const statusThLabel = {
@@ -191,17 +190,21 @@ function applySearchAndReset() {
     ? `พบ ${filteredGroups.length} เมนู (${totalRows} รายการ)`
     : "";
 
-  // reset pagination + สร้างตารางใหม่ทั้งหมด
-  currentPageIdx = 0;
   const container = document.getElementById("groupsContainer");
   if (!filteredGroups.length) {
     container.innerHTML = `<p class="hint">ไม่พบรายการตามคำค้น/ตัวกรองนี้</p>`;
-    document.getElementById("loadMoreHint").textContent = "";
-    if (scrollObserver) scrollObserver.disconnect();
     return;
   }
+
+  // render "ทุกแถว" ทีเดียวลงในกล่อง scroll เดียว — ตัวที่ทำให้เห็นแค่ pageSize แถว
+  // คือความสูงกล่อง (.table-scroll) ที่ถูกจำกัดไว้ ไม่ใช่การโหลดข้อมูลทีละก้อนแบบเดิม
+  let bodyHtml = "";
+  filteredGroups.forEach((g, gi) => {
+    bodyHtml += buildGroupRowsHtml(g, gi + 1);
+  });
+
   container.innerHTML = `
-    <div class="table-scroll">
+    <div class="table-scroll" id="tableScroll">
     <table class="rows excel-style">
       <thead>
         <tr>
@@ -209,12 +212,12 @@ function applySearchAndReset() {
           <th>QTY</th><th>Small Unit</th><th>สถานะ</th><th>ค่าที่ถูกต้อง</th><th>เหตุผล</th>
         </tr>
       </thead>
-      <tbody id="rowsTbody"></tbody>
+      <tbody id="rowsTbody">${bodyHtml}</tbody>
     </table>
     </div>
   `;
-  renderNextPage();
-  setupInfiniteScroll();
+  bindGroupCopyButtons(container);
+  setupFadeWindow();
 }
 
 function buildGroupRowsHtml(g, menuNo) {
@@ -222,7 +225,7 @@ function buildGroupRowsHtml(g, menuNo) {
   g.rows.forEach((r, ri) => {
     const isFirstRow = ri === 0;
     html += `
-      <tr class="${isFirstRow ? "menu-start" : ""}">
+      <tr class="fade-row ${isFirstRow ? "menu-start" : ""}">
         <td class="col-no">${isFirstRow ? menuNo : ""}</td>
         <td class="col-recipe">${isFirstRow ? `<span class="group-tag">${g.recipe_type}</span> <span class="code">${g.parent_code}</span>` : ""}</td>
         <td class="col-menuname">${isFirstRow ? (g.parent_name || "") : ""}</td>
@@ -236,7 +239,7 @@ function buildGroupRowsHtml(g, menuNo) {
       </tr>`;
   });
   html += `
-    <tr class="menu-gap">
+    <tr class="fade-row menu-gap">
       <td colspan="7"></td>
       <td colspan="3" style="text-align:right;">
         <button class="group-copy" data-type="${g.recipe_type}" data-code="${g.parent_code}">คัดลอกสำหรับ Tampermonkey</button>
@@ -245,41 +248,33 @@ function buildGroupRowsHtml(g, menuNo) {
   return html;
 }
 
-function renderNextPage() {
-  const tbody = document.getElementById("rowsTbody");
-  if (!tbody) return;
-  const start = currentPageIdx * pageSize;
-  const slice = filteredGroups.slice(start, start + pageSize);
-  if (!slice.length) {
-    document.getElementById("loadMoreHint").textContent = filteredGroups.length
-      ? `แสดงครบทั้งหมดแล้ว (${filteredGroups.length} เมนู)`
-      : "";
-    if (scrollObserver) scrollObserver.disconnect();
-    return;
-  }
+/**
+ * หัวใจของ "หน้าต่างเลื่อนแบบ conveyor":
+ * 1) จำกัดความสูงกล่อง .table-scroll ให้เท่ากับ pageSize x ความสูงแถวจริง (วัดจากแถวแรกที่ render จริง)
+ *    -> ทำให้เห็นแค่ pageSize แถวพอดีโดยไม่ต้อง scroll ทั้งหน้า (scroll เฉพาะในกล่องนี้)
+ * 2) ผูก IntersectionObserver ที่ root = กล่องนี้ ให้ทุกแถว โดยตั้ง threshold หลายระดับ (0%,5%,10%,...,100%)
+ *    -> ทุกครั้งที่แถวโผล่/หายจากขอบกล่องแม้แค่บางส่วน จะได้ค่า intersectionRatio ที่ใช้เป็น opacity ตรงๆ
+ *    -> แถวที่กำลังเลื่อนพ้นขอบบน/กำลังโผล่จากขอบล่าง จะจางตามสัดส่วนที่โผล่จริง (มี CSS transition ช่วยให้ลื่นขึ้น)
+ */
+function setupFadeWindow() {
+  const scrollBox = document.getElementById("tableScroll");
+  const firstRow = scrollBox?.querySelector("tbody tr");
+  if (!scrollBox || !firstRow) return;
 
-  const frag = document.createElement("tbody");
-  frag.innerHTML = slice.map((g, i) => buildGroupRowsHtml(g, start + i + 1)).join("");
-  const rowsToAppend = [...frag.querySelectorAll("tr")];
-  rowsToAppend.forEach((tr) => {
-    tr.classList.add("row-fade-in");
-    tbody.appendChild(tr);
-  });
-  bindGroupCopyButtons(tbody);
+  const rowHeight = firstRow.getBoundingClientRect().height || 42;
+  scrollBox.style.maxHeight = `${Math.round(rowHeight * pageSize)}px`;
 
-  currentPageIdx++;
-  const doneCount = Math.min(currentPageIdx * pageSize, filteredGroups.length);
-  document.getElementById("loadMoreHint").textContent =
-    doneCount < filteredGroups.length ? `แสดงแล้ว ${doneCount} / ${filteredGroups.length} เมนู — เลื่อนลงเพื่อโหลดต่อ` : `แสดงครบทั้งหมดแล้ว (${filteredGroups.length} เมนู)`;
-}
-
-function setupInfiniteScroll() {
-  if (scrollObserver) scrollObserver.disconnect();
-  const sentinel = document.getElementById("scrollSentinel");
-  scrollObserver = new IntersectionObserver((entries) => {
-    if (entries[0].isIntersecting) renderNextPage();
-  }, { rootMargin: "400px" }); // เริ่มโหลดก่อนถึงจุดสุดจริง ~400px ให้รู้สึกสมูท ไม่มีจังหวะรอกระตุก
-  scrollObserver.observe(sentinel);
+  if (rowFadeObserver) rowFadeObserver.disconnect();
+  const thresholds = Array.from({ length: 21 }, (_, i) => i / 20); // 0%, 5%, ..., 100%
+  rowFadeObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        entry.target.style.opacity = entry.intersectionRatio.toFixed(2);
+      });
+    },
+    { root: scrollBox, threshold: thresholds }
+  );
+  scrollBox.querySelectorAll(".fade-row").forEach((row) => rowFadeObserver.observe(row));
 }
 
 function bindGroupCopyButtons(scope) {
