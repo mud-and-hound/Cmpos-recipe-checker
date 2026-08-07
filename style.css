@@ -332,3 +332,30 @@ footer { text-align: center; padding: 32px 24px 60px; color: var(--slate); font-
   border-radius: 2px; cursor: pointer; transition: color .2s, border-color .2s;
 }
 .settings-reset:hover { color: var(--gold-bright); border-color: var(--gold-bright); }
+
+/* ---------- Search + Page size ---------- */
+.search-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+.search-box {
+  flex: 1; min-width: 240px; display: flex; align-items: center; gap: 8px;
+  background: var(--navy-lift); border: 1px solid rgba(201,169,97,.3); border-radius: 2px;
+  padding: 9px 14px;
+}
+.search-box:focus-within { border-color: var(--gold-bright); }
+.search-icon { width: 15px; height: 15px; fill: none; stroke: var(--slate); stroke-width: 2; flex-shrink: 0; }
+.search-box input {
+  flex: 1; background: none; border: none; outline: none; color: var(--ivory);
+  font-family: var(--font-body); font-size: 13px;
+}
+.search-box input::placeholder { color: var(--slate); }
+.page-size-box { display: flex; align-items: center; gap: 8px; font-family: var(--font-body); font-size: 12.5px; color: var(--slate); }
+.page-size-box select {
+  background: var(--navy-lift); color: var(--ivory); border: 1px solid rgba(201,169,97,.3);
+  border-radius: 2px; padding: 6px 8px; font-family: var(--font-body); font-size: 12.5px;
+}
+.search-count { font-size: 12px; color: var(--slate); white-space: nowrap; }
+
+.scroll-sentinel { height: 1px; }
+#loadMoreHint { text-align: center; padding: 20px 0; }
+
+.row-fade-in { animation: rowFadeIn .35s ease; }
+@keyframes rowFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
