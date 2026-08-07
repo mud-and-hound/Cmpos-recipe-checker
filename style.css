@@ -64,7 +64,8 @@ h1 {
   line-height: 1.8;
 }
 
-main { max-width: 900px; margin: 0 auto; padding: 0 24px 80px; }
+main { max-width: 1180px; margin: 0 auto; padding: 0 24px 80px; }
+.table-scroll { overflow-x: auto; }
 
 .section-title {
   font-size: 12px;
@@ -260,6 +261,22 @@ table.rows td { padding: 9px 10px; border-bottom: 1px solid rgba(255,255,255,.04
 .qty-old { color: var(--slate); text-decoration: line-through; font-size: 11.5px; }
 .qty-new { color: var(--ivory); font-weight: 500; }
 .note { color: var(--slate); font-size: 11.5px; line-height: 1.6; }
+
+/* ---------- Excel-style flat table ---------- */
+table.excel-style { border: 1px solid rgba(201,169,97,.2); }
+table.excel-style th { border-right: 1px solid rgba(201,169,97,.12); white-space: nowrap; }
+table.excel-style td { border-right: 1px solid rgba(255,255,255,.03); }
+table.excel-style tr.menu-start td { border-top: 1px solid rgba(201,169,97,.3); }
+table.excel-style tr.menu-start .col-no { color: var(--gold); font-weight: 600; }
+table.excel-style .col-recipe { white-space: nowrap; }
+table.excel-style .col-menuname { color: var(--ivory); font-weight: 500; }
+table.excel-style tr.menu-gap td { padding: 4px 10px; border-bottom: 1px solid rgba(201,169,97,.15); }
+table.excel-style tbody tr:hover:not(.menu-gap) td { background: rgba(201,169,97,.04); }
+table.excel-style { min-width: 980px; }
+table.excel-style .col-menuname { min-width: 110px; }
+table.excel-style td:nth-child(5) { min-width: 200px; }
+table.excel-style td:nth-child(6), table.excel-style td:nth-child(7) { white-space: nowrap; }
+table.excel-style td:nth-child(10) { min-width: 180px; }
 
 footer { text-align: center; padding: 32px 24px 60px; color: var(--slate); font-size: 11.5px; }
 
