@@ -8,6 +8,15 @@ const API_KEY = "recipe2026check";           // ต้องตรงกับ R
 let currentToken = null;
 let currentSummary = null;
 
+// ---------- ค้นหา + pagination + infinite scroll ----------
+let allGroups = [];          // ข้อมูลทั้งหมดที่ backend ส่งมา (หลัง filter สถานะแล้ว)
+let filteredGroups = [];     // หลังผ่านช่องค้นหาอีกชั้น
+let currentPageIdx = 0;      // หน้าปัจจุบัน (นับจาก 0) สำหรับ infinite scroll
+let pageSize = 25;           // จำนวนเมนูต่อหน้า
+let searchTerm = "";
+let scrollObserver = null;
+let searchDebounceTimer = null;
+
 const statusThLabel = {
   green: "ตรงกับ CM POS", yellow: "แปลงหน่วยอัตโนมัติ",
   orange: "ประมาณจากไฟล์ Excel", red: "ต้องเช็คมือ", missing: "ไม่พบใน CM POS",
@@ -121,7 +130,8 @@ async function loadResults(status) {
   });
   const data = await res.json();
   renderSummary(data.summary, status);
-  renderGroups(data.groups);
+  allGroups = data.groups;
+  applySearchAndReset();
 }
 
 function renderSummary(summary, activeStatus) {
@@ -149,44 +159,47 @@ function renderSummary(summary, activeStatus) {
   });
 }
 
-function renderGroups(groups) {
-  const container = document.getElementById("groupsContainer");
-  if (!groups.length) {
-    container.innerHTML = `<p class="hint">ไม่พบรายการตามตัวกรองนี้</p>`;
-    return;
+// ---------- ค้นหา (fuzzy — ค้นทุกคอลัมน์พร้อมกัน) ----------
+function rowMatchesSearch(group, row, term) {
+  const haystack = [
+    group.parent_code, group.parent_name, group.recipe_type,
+    row.ingredient_code, row.ingredient_desc, row.item_name_db,
+    row.excel_qty, row.excel_unit_raw, row.final_qty, row.final_unit,
+    statusThLabel[row.status], row.status, row.note,
+  ].filter(Boolean).join(" ").toLowerCase();
+  return haystack.includes(term);
+}
+
+function applySearchAndReset() {
+  const term = searchTerm.trim().toLowerCase();
+  if (!term) {
+    filteredGroups = allGroups;
+  } else {
+    filteredGroups = allGroups
+      .map((g) => {
+        // ถ้าค้นเจอที่ระดับเมนู (รหัส/ชื่อเมนู) ให้เก็บทุกแถวของเมนูนั้นไว้ครบ (เห็น context เต็ม)
+        const groupLevelMatch = `${g.parent_code} ${g.parent_name} ${g.recipe_type}`.toLowerCase().includes(term);
+        const rows = groupLevelMatch ? g.rows : g.rows.filter((r) => rowMatchesSearch(g, r, term));
+        return rows.length ? { ...g, rows } : null;
+      })
+      .filter(Boolean);
   }
 
-  // สร้างตารางยาวเดียว หน้าตาแบบไฟล์ Excel ต้นฉบับ:
-  // No. | Recipe | Name Menu | Item Code | Item Description | QTY | Small Unit | [สถานะ | ค่าที่ถูกต้อง | เหตุผล]
-  // โชว์ No./Recipe/Name Menu แค่แถวแรกของแต่ละเมนู (เว้นว่างแถวถัดไป) เหมือนไฟล์ต้นฉบับ
-  let bodyHtml = "";
-  groups.forEach((g, gi) => {
-    g.rows.forEach((r, ri) => {
-      const isFirstRow = ri === 0;
-      bodyHtml += `
-        <tr class="${isFirstRow ? "menu-start" : ""}">
-          <td class="col-no">${isFirstRow ? gi + 1 : ""}</td>
-          <td class="col-recipe">${isFirstRow ? `<span class="group-tag">${g.recipe_type}</span> <span class="code">${g.parent_code}</span>` : ""}</td>
-          <td class="col-menuname">${isFirstRow ? (g.parent_name || "") : ""}</td>
-          <td class="code">${r.ingredient_code}</td>
-          <td>${r.ingredient_desc || ""}</td>
-          <td class="qty-old">${Number(r.excel_qty).toFixed(4)}</td>
-          <td>${r.excel_unit_raw || ""}</td>
-          <td><span class="dot dot-${r.status}"></span>${statusThLabel[r.status] || r.status}</td>
-          <td class="qty-new">${r.final_qty ?? "—"} ${r.final_unit || ""}</td>
-          <td class="note">${r.note || ""}</td>
-        </tr>`;
-    });
-    // แถวว่างคั่นระหว่างเมนู (เหมือนไฟล์ Excel ต้นฉบับ) + ปุ่ม copy ต่อท้ายกลุ่ม
-    bodyHtml += `
-      <tr class="menu-gap">
-        <td colspan="7"></td>
-        <td colspan="3" style="text-align:right;">
-          <button class="group-copy" data-type="${g.recipe_type}" data-code="${g.parent_code}">คัดลอกสำหรับ Tampermonkey</button>
-        </td>
-      </tr>`;
-  });
+  const countEl = document.getElementById("searchCount");
+  const totalRows = filteredGroups.reduce((sum, g) => sum + g.rows.length, 0);
+  countEl.textContent = term
+    ? `พบ ${filteredGroups.length} เมนู (${totalRows} รายการ)`
+    : "";
 
+  // reset pagination + สร้างตารางใหม่ทั้งหมด
+  currentPageIdx = 0;
+  const container = document.getElementById("groupsContainer");
+  if (!filteredGroups.length) {
+    container.innerHTML = `<p class="hint">ไม่พบรายการตามคำค้น/ตัวกรองนี้</p>`;
+    document.getElementById("loadMoreHint").textContent = "";
+    if (scrollObserver) scrollObserver.disconnect();
+    return;
+  }
   container.innerHTML = `
     <div class="table-scroll">
     <table class="rows excel-style">
@@ -196,12 +209,83 @@ function renderGroups(groups) {
           <th>QTY</th><th>Small Unit</th><th>สถานะ</th><th>ค่าที่ถูกต้อง</th><th>เหตุผล</th>
         </tr>
       </thead>
-      <tbody>${bodyHtml}</tbody>
+      <tbody id="rowsTbody"></tbody>
     </table>
     </div>
   `;
+  renderNextPage();
+  setupInfiniteScroll();
+}
 
-  container.querySelectorAll(".group-copy").forEach((btn) => {
+function buildGroupRowsHtml(g, menuNo) {
+  let html = "";
+  g.rows.forEach((r, ri) => {
+    const isFirstRow = ri === 0;
+    html += `
+      <tr class="${isFirstRow ? "menu-start" : ""}">
+        <td class="col-no">${isFirstRow ? menuNo : ""}</td>
+        <td class="col-recipe">${isFirstRow ? `<span class="group-tag">${g.recipe_type}</span> <span class="code">${g.parent_code}</span>` : ""}</td>
+        <td class="col-menuname">${isFirstRow ? (g.parent_name || "") : ""}</td>
+        <td class="code">${r.ingredient_code}</td>
+        <td>${r.ingredient_desc || ""}</td>
+        <td class="qty-old">${Number(r.excel_qty).toFixed(4)}</td>
+        <td>${r.excel_unit_raw || ""}</td>
+        <td><span class="dot dot-${r.status}"></span>${statusThLabel[r.status] || r.status}</td>
+        <td class="qty-new">${r.final_qty ?? "—"} ${r.final_unit || ""}</td>
+        <td class="note">${r.note || ""}</td>
+      </tr>`;
+  });
+  html += `
+    <tr class="menu-gap">
+      <td colspan="7"></td>
+      <td colspan="3" style="text-align:right;">
+        <button class="group-copy" data-type="${g.recipe_type}" data-code="${g.parent_code}">คัดลอกสำหรับ Tampermonkey</button>
+      </td>
+    </tr>`;
+  return html;
+}
+
+function renderNextPage() {
+  const tbody = document.getElementById("rowsTbody");
+  if (!tbody) return;
+  const start = currentPageIdx * pageSize;
+  const slice = filteredGroups.slice(start, start + pageSize);
+  if (!slice.length) {
+    document.getElementById("loadMoreHint").textContent = filteredGroups.length
+      ? `แสดงครบทั้งหมดแล้ว (${filteredGroups.length} เมนู)`
+      : "";
+    if (scrollObserver) scrollObserver.disconnect();
+    return;
+  }
+
+  const frag = document.createElement("tbody");
+  frag.innerHTML = slice.map((g, i) => buildGroupRowsHtml(g, start + i + 1)).join("");
+  const rowsToAppend = [...frag.querySelectorAll("tr")];
+  rowsToAppend.forEach((tr) => {
+    tr.classList.add("row-fade-in");
+    tbody.appendChild(tr);
+  });
+  bindGroupCopyButtons(tbody);
+
+  currentPageIdx++;
+  const doneCount = Math.min(currentPageIdx * pageSize, filteredGroups.length);
+  document.getElementById("loadMoreHint").textContent =
+    doneCount < filteredGroups.length ? `แสดงแล้ว ${doneCount} / ${filteredGroups.length} เมนู — เลื่อนลงเพื่อโหลดต่อ` : `แสดงครบทั้งหมดแล้ว (${filteredGroups.length} เมนู)`;
+}
+
+function setupInfiniteScroll() {
+  if (scrollObserver) scrollObserver.disconnect();
+  const sentinel = document.getElementById("scrollSentinel");
+  scrollObserver = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) renderNextPage();
+  }, { rootMargin: "400px" }); // เริ่มโหลดก่อนถึงจุดสุดจริง ~400px ให้รู้สึกสมูท ไม่มีจังหวะรอกระตุก
+  scrollObserver.observe(sentinel);
+}
+
+function bindGroupCopyButtons(scope) {
+  scope.querySelectorAll(".group-copy").forEach((btn) => {
+    if (btn.dataset.bound) return;
+    btn.dataset.bound = "1";
     btn.addEventListener("click", async () => {
       const res = await fetch(`${API_BASE}/api/group_text/${currentToken}/${encodeURIComponent(btn.dataset.type)}/${encodeURIComponent(btn.dataset.code)}`, {
         headers: { "x-api-key": API_KEY },
@@ -216,6 +300,20 @@ function renderGroups(groups) {
     });
   });
 }
+
+// ---------- ช่องค้นหา + page size ----------
+document.getElementById("searchInput").addEventListener("input", (e) => {
+  clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = setTimeout(() => {
+    searchTerm = e.target.value;
+    applySearchAndReset();
+  }, 250); // debounce กันเรียก re-render ถี่เกินไปตอนพิมพ์เร็ว
+});
+
+document.getElementById("pageSizeSelect").addEventListener("change", (e) => {
+  pageSize = parseInt(e.target.value, 10);
+  applySearchAndReset();
+});
 
 // ---------- Export ----------
 document.getElementById("btnExport").addEventListener("click", async () => {
