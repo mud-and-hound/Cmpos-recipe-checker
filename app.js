@@ -12,9 +12,9 @@ let pendingFiles = []; // รายการไฟล์ที่เลือก
 // ---------- ค้นหา + หน้าต่างเลื่อนแบบ conveyor (fade ตามตำแหน่ง scroll จริง) ----------
 let allGroups = [];          // ข้อมูลทั้งหมดที่ backend ส่งมา (หลัง filter สถานะแล้ว)
 let filteredGroups = [];     // หลังผ่านช่องค้นหาอีกชั้น
-let pageSize = 10;           // จำนวน "แถว" ที่มองเห็นพร้อมกันในกล่อง (ความสูงกล่อง = pageSize x ความสูงแถว)
+let pageSize = 10;           // จำนวน "เมนู" ต่อ 1 หน้า (pagination แบบดั้งเดิม)
 let searchTerm = "";
-let rowFadeObserver = null;
+let currentPageIdx = 0;      // หน้าปัจจุบัน (0-based)
 let searchDebounceTimer = null;
 
 const statusThLabel = {
@@ -212,17 +212,31 @@ function applySearchAndReset() {
     ? `พบ ${filteredGroups.length} เมนู (${totalRows} รายการ)`
     : "";
 
+  currentPageIdx = 0; // ค้นหา/กรองใหม่ทุกครั้ง กลับไปหน้า 1 เสมอ
+  renderCurrentPage();
+}
+
+/**
+ * ⚠️ เปลี่ยนจาก "fade window แบบ conveyor scroll" (render ทุกแถวพร้อมกัน + IntersectionObserver)
+ * มาเป็น "แบ่งหน้าแบบดั้งเดิม" (pagination) — เบากว่ามาก เพราะ render แค่ pageSize เมนูต่อครั้งเท่านั้น
+ * ไม่ต้องแบกทั้งพันแถวไว้ใน DOM พร้อมกัน แก้ปัญหากระตุกที่เจอตอนข้อมูลเยอะได้ตรงจุด
+ */
+function renderCurrentPage() {
   const container = document.getElementById("groupsContainer");
   if (!filteredGroups.length) {
     container.innerHTML = `<p class="hint">ไม่พบรายการตามคำค้น/ตัวกรองนี้</p>`;
+    document.getElementById("paginationBar").innerHTML = "";
     return;
   }
 
-  // render "ทุกแถว" ทีเดียวลงในกล่อง scroll เดียว — ตัวที่ทำให้เห็นแค่ pageSize แถว
-  // คือความสูงกล่อง (.table-scroll) ที่ถูกจำกัดไว้ ไม่ใช่การโหลดข้อมูลทีละก้อนแบบเดิม
+  const totalPages = Math.max(1, Math.ceil(filteredGroups.length / pageSize));
+  currentPageIdx = Math.min(currentPageIdx, totalPages - 1);
+  const start = currentPageIdx * pageSize;
+  const pageGroups = filteredGroups.slice(start, start + pageSize);
+
   let bodyHtml = "";
-  filteredGroups.forEach((g, gi) => {
-    bodyHtml += buildGroupRowsHtml(g, gi + 1);
+  pageGroups.forEach((g, gi) => {
+    bodyHtml += buildGroupRowsHtml(g, start + gi + 1);
   });
 
   container.innerHTML = `
@@ -240,7 +254,36 @@ function applySearchAndReset() {
   `;
   bindGroupCopyButtons(container);
   bindLocPopovers(container);
-  setupFadeWindow();
+  renderPaginationBar(totalPages);
+}
+
+function renderPaginationBar(totalPages) {
+  const bar = document.getElementById("paginationBar");
+  const cur = currentPageIdx + 1;
+  bar.innerHTML = `
+    <button class="page-btn" id="pagePrev" ${cur === 1 ? "disabled" : ""}>‹ ก่อนหน้า</button>
+    <span class="page-info">
+      หน้า
+      <input type="number" id="pageJump" value="${cur}" min="1" max="${totalPages}">
+      / ${totalPages}
+    </span>
+    <button class="page-btn" id="pageNext" ${cur === totalPages ? "disabled" : ""}>ถัดไป ›</button>
+  `;
+  document.getElementById("pagePrev").addEventListener("click", () => {
+    if (currentPageIdx > 0) { currentPageIdx--; renderCurrentPage(); document.getElementById("groupsContainer").scrollIntoView({ behavior: "smooth", block: "start" }); }
+  });
+  document.getElementById("pageNext").addEventListener("click", () => {
+    if (currentPageIdx < totalPages - 1) { currentPageIdx++; renderCurrentPage(); document.getElementById("groupsContainer").scrollIntoView({ behavior: "smooth", block: "start" }); }
+  });
+  const jumpInp = document.getElementById("pageJump");
+  jumpInp.addEventListener("change", () => {
+    let v = parseInt(jumpInp.value, 10);
+    if (isNaN(v)) v = 1;
+    v = Math.max(1, Math.min(totalPages, v));
+    currentPageIdx = v - 1;
+    renderCurrentPage();
+    document.getElementById("groupsContainer").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
 }
 
 function buildGroupRowsHtml(g, menuNo) {
@@ -249,7 +292,7 @@ function buildGroupRowsHtml(g, menuNo) {
     const isFirstRow = ri === 0;
     const locId = `loc-${menuNo}-${ri}-${Math.random().toString(36).slice(2, 7)}`;
     html += `
-      <tr class="fade-row ${isFirstRow ? "menu-start" : ""}">
+      <tr class="${isFirstRow ? "menu-start" : ""}">
         <td class="col-no">${isFirstRow ? menuNo : ""}</td>
         <td class="col-recipe">${isFirstRow ? `<span class="group-tag">${g.recipe_type}</span> <span class="code">${g.parent_code}</span>` : ""}</td>
         <td class="col-menuname">${isFirstRow ? (g.parent_name || "") : ""}</td>
@@ -272,7 +315,7 @@ function buildGroupRowsHtml(g, menuNo) {
       </tr>`;
   });
   html += `
-    <tr class="fade-row menu-gap">
+    <tr class="menu-gap">
       <td colspan="8"></td>
       <td colspan="3" style="text-align:right;">
         <button class="group-copy" data-type="${g.recipe_type}" data-code="${g.parent_code}">คัดลอกสำหรับ Tampermonkey</button>
@@ -301,39 +344,6 @@ function bindLocPopovers(scope) {
       document.querySelectorAll(".loc-popover").forEach((p) => (p.hidden = true));
     });
   }
-}
-
-
-/**
- * หัวใจของ "หน้าต่างเลื่อนแบบ conveyor":
- * 1) จำกัดความสูงกล่อง .table-scroll ให้เท่ากับ pageSize x ความสูงแถวจริง (วัดจากแถวแรกที่ render จริง)
- *    -> ทำให้เห็นแค่ pageSize แถวพอดีโดยไม่ต้อง scroll ทั้งหน้า (scroll เฉพาะในกล่องนี้)
- * 2) ผูก IntersectionObserver ที่ root = กล่องนี้ ให้ทุกแถว โดยตั้ง threshold หลายระดับ (0%,5%,10%,...,100%)
- *    -> ทุกครั้งที่แถวโผล่/หายจากขอบกล่องแม้แค่บางส่วน จะได้ค่า intersectionRatio ที่ใช้เป็น opacity ตรงๆ
- *    -> แถวที่กำลังเลื่อนพ้นขอบบน/กำลังโผล่จากขอบล่าง จะจางตามสัดส่วนที่โผล่จริง (มี CSS transition ช่วยให้ลื่นขึ้น)
- */
-function setupFadeWindow() {
-  const scrollBox = document.getElementById("tableScroll");
-  const firstRow = scrollBox?.querySelector("tbody tr");
-  if (!scrollBox || !firstRow) return;
-
-  const rowHeight = firstRow.getBoundingClientRect().height || 42;
-  scrollBox.style.maxHeight = `${Math.round(rowHeight * pageSize)}px`;
-
-  if (rowFadeObserver) rowFadeObserver.disconnect();
-  // ⚠️ ลดจาก 21 ระดับ (0,5,10,...,100%) เหลือ 9 ระดับ — ข้อมูลหลักพันแถวขึ้นไป เจอกระตุกจริง
-  // เพราะ callback ยิงถี่เกินไปตอน scroll (ทุกแถวมี observer เดียวกัน จำนวนครั้งที่ยิง = แถว x thresholds)
-  // ลดจำนวนขั้นลงเหลือ 9 (ทุก 12.5%) ยัง fade นุ่มพอมองด้วยตาปกติ แต่ลด callback ลงกว่าครึ่ง
-  const thresholds = Array.from({ length: 9 }, (_, i) => i / 8); // 0%, 12.5%, ..., 100%
-  rowFadeObserver = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        entry.target.style.opacity = entry.intersectionRatio.toFixed(2);
-      });
-    },
-    { root: scrollBox, threshold: thresholds }
-  );
-  scrollBox.querySelectorAll(".fade-row").forEach((row) => rowFadeObserver.observe(row));
 }
 
 function bindGroupCopyButtons(scope) {
