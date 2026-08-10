@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ผลการเทียบ — CM POS Recipe Checker</title>
+<link rel="stylesheet" href="../style.css?v=6">
+</head>
+<body>
+
+  <a href="../" class="log-link-btn" style="right:auto;left:20px;" title="กลับหน้าอัปโหลด">← อัปโหลด</a>
+  <a href="../log/" class="log-link-btn" title="ติดตามงาน (Log)">📡 Log</a>
+
+  <button class="settings-btn" id="settingsBtn" aria-label="ตั้งค่าฟอนต์" aria-expanded="false">
+    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="settings-icon"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+
+  <div class="settings-panel" id="settingsPanel">
+    <p class="settings-title">ตั้งค่าฟอนต์</p>
+
+    <label class="settings-label" for="fontDisplay">ฟอนต์หัวข้อ (Display / อังกฤษ)</label>
+    <select class="settings-select" id="fontDisplay">
+      <optgroup label="Serif">
+        <option value="Cormorant Garamond" style="font-family:'Cormorant Garamond',serif;">Cormorant Garamond</option>
+        <option value="Playfair Display" style="font-family:'Playfair Display',serif;">Playfair Display</option>
+        <option value="EB Garamond" style="font-family:'EB Garamond',serif;">EB Garamond</option>
+      </optgroup>
+      <optgroup label="Sans Serif">
+        <option value="Inter" style="font-family:'Inter',sans-serif;">Inter</option>
+        <option value="Hind Siliguri" style="font-family:'Hind Siliguri',sans-serif;">Hind Siliguri (ค่าเริ่มต้น)</option>
+      </optgroup>
+      <optgroup label="Handwriting">
+        <option value="Patrick Hand" style="font-family:'Patrick Hand',cursive;">Patrick Hand</option>
+        <option value="Indie Flower" style="font-family:'Indie Flower',cursive;">Indie Flower</option>
+      </optgroup>
+      <optgroup label="Script">
+        <option value="Parisienne" style="font-family:'Parisienne',cursive;">Parisienne</option>
+        <option value="Yellowtail" style="font-family:'Yellowtail',cursive;">Yellowtail</option>
+      </optgroup>
+      <optgroup label="Display">
+        <option value="Yeseva One" style="font-family:'Yeseva One',serif;">Yeseva One</option>
+        <option value="Lobster" style="font-family:'Lobster',cursive;">Lobster</option>
+      </optgroup>
+    </select>
+
+    <label class="settings-label" for="fontBody">ฟอนต์เนื้อหา (ไทย)</label>
+    <select class="settings-select" id="fontBody">
+      <optgroup label="มีหัว">
+        <option value="Sarabun" style="font-family:'Sarabun',sans-serif;">Sarabun</option>
+        <option value="Trirong" style="font-family:'Trirong',serif;">Trirong</option>
+      </optgroup>
+      <optgroup label="ไม่มีหัว">
+        <option value="Kanit" style="font-family:'Kanit',sans-serif;">Kanit</option>
+        <option value="Prompt" style="font-family:'Prompt',sans-serif;">Prompt</option>
+      </optgroup>
+      <optgroup label="ลายมือ">
+        <option value="Itim" style="font-family:'Itim',cursive;">Itim</option>
+        <option value="Mali" style="font-family:'Mali',cursive;">Mali (ค่าเริ่มต้น)</option>
+      </optgroup>
+      <optgroup label="คัดลายมือ">
+        <option value="Niramit" style="font-family:'Niramit',sans-serif;">Niramit</option>
+        <option value="Charm" style="font-family:'Charm',cursive;">Charm</option>
+      </optgroup>
+      <optgroup label="ประดิษฐ์">
+        <option value="Chonburi" style="font-family:'Chonburi',cursive;">Chonburi</option>
+        <option value="Pattaya" style="font-family:'Pattaya',cursive;">Pattaya</option>
+      </optgroup>
+    </select>
+
+    <p class="settings-note">เลือกแล้วบันทึกเป็นค่าเริ่มต้นลงเครื่องนี้ให้อัตโนมัติทันที</p>
+    <button class="settings-reset" id="settingsReset">ล้างกลับค่าเริ่มต้น (Hind Siliguri / Mali)</button>
+  </div>
+
+  <main>
+    <section class="results-section" id="resultsSection">
+      <h2 class="section-title" style="margin-top:40px;">ผลการเทียบ</h2>
+
+      <div class="qr-box" style="margin-bottom:24px;">
+        <img id="qrImg" alt="QR สแกนเปิดหน้านี้บนมือถือ" width="120" height="120">
+        <div class="qr-caption">📱 สแกนเพื่อเปิดหน้านี้บนมือถือ</div>
+      </div>
+
+      <div class="summary-row" id="summaryRow"></div>
+
+      <div class="toolbar">
+        <div class="filter-row" id="filterRow"></div>
+        <button class="btn-ghost" id="btnExport">
+          <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="btn-icon-sm"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Export CSV
+        </button>
+      </div>
+
+      <div class="search-row">
+        <div class="search-box">
+          <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="search-icon"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3" stroke-linecap="round"/></svg>
+          <input type="text" id="searchInput" placeholder="ค้นหา... รหัสไอเท็ม, ชื่อ, หน่วย, สถานะ อะไรก็ได้">
+        </div>
+        <div class="page-size-box">
+          <label for="pageSizeSelect">แสดง</label>
+          <select id="pageSizeSelect">
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+            <option value="15">15</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+          <span>เมนู/หน้า</span>
+        </div>
+        <span class="search-count" id="searchCount"></span>
+      </div>
+
+      <div id="groupsContainer"></div>
+      <div class="pagination-bar" id="paginationBar"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>อ่านข้อมูลอย่างเดียวจาก CM POS — ไม่มีการแก้ไขข้อมูลใดๆ ผ่านหน้านี้</p>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="../app.js?v=6"></script>
+</body>
+</html>
