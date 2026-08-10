@@ -398,3 +398,36 @@ footer { text-align: center; padding: 32px 24px 60px; color: var(--slate); font-
 }
 .qr-box img { display: block; border-radius: 6px; background: #fff; padding: 5px; }
 .qr-caption { font-family: var(--font-body); font-size: 12px; color: var(--ivory); max-width: 120px; line-height: 1.6; text-align: left; }
+
+/* ---------- อัปโหลดไฟล์แบบยืดหยุ่น (เพิ่ม/ลบได้ ไม่จำกัดจำนวน) ---------- */
+.file-dropzone {
+  border: 2px dashed rgba(201,169,97,.35); border-radius: 12px;
+  padding: 36px 24px; text-align: center; max-width: 480px; margin: 0 auto;
+  transition: border-color .2s, background .2s; cursor: pointer;
+}
+.file-dropzone:hover, .file-dropzone.dragover { border-color: var(--gold-bright); background: rgba(201,169,97,.05); }
+.dropzone-icon { color: var(--gold-bright); margin-bottom: 10px; }
+.dropzone-text { font-family: var(--font-body); font-size: 14px; color: var(--ivory); margin-bottom: 6px; }
+.dropzone-btn {
+  background: none; border: none; color: var(--gold-bright); text-decoration: underline;
+  cursor: pointer; font-family: var(--font-body); font-size: 14px; padding: 0;
+}
+.dropzone-hint { font-family: var(--font-body); font-size: 11.5px; color: var(--slate); }
+
+.file-list {
+  list-style: none; max-width: 480px; margin: 18px auto 0; padding: 0;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.file-list-item {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--navy-lift); border: 1px solid rgba(201,169,97,.25); border-radius: 8px;
+  padding: 10px 14px; font-family: var(--font-body); font-size: 13px; color: var(--ivory);
+}
+.file-list-item .file-icon { color: var(--gold-bright); flex-shrink: 0; }
+.file-list-item .file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+.file-list-item .file-size { color: var(--slate); font-size: 11.5px; flex-shrink: 0; }
+.file-list-item .file-remove {
+  background: none; border: none; color: #f87171; cursor: pointer; font-size: 16px;
+  flex-shrink: 0; padding: 2px 6px; border-radius: 4px; line-height: 1;
+}
+.file-list-item .file-remove:hover { background: rgba(248,113,113,.15); }
