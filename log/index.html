@@ -38,6 +38,14 @@
     padding: 16px 18px; font-family: ui-monospace, 'Courier New', monospace; font-size: 12px;
     color: #94a3b8; min-height: 200px; line-height: 1.8; margin-top: 20px;
   }
+
+  .qr-box {
+    display: flex; align-items: center; gap: 16px; margin-bottom: 24px;
+    background: var(--navy-lift); border: 1px solid rgba(201,169,97,.3); border-radius: 10px;
+    padding: 16px 20px; width: fit-content;
+  }
+  .qr-box img { display: block; border-radius: 6px; background: #fff; padding: 6px; }
+  .qr-caption { font-family: var(--font-body); font-size: 12.5px; color: var(--ivory); max-width: 140px; line-height: 1.6; }
 </style>
 </head>
 <body>
@@ -48,7 +56,12 @@
     </div>
 
     <h1 class="log-title">📡 ติดตามงาน</h1>
-    <p class="log-sub">ดูสถานะการรันงานแบบ real-time — เปิดหน้านี้ค้างไว้ หรือสแกน QR จากมือถือเพื่อดูขณะทำงานอยู่ที่ PC</p>
+    <p class="log-sub">ดูสถานะการรันงานแบบ real-time — เปิดหน้านี้ค้างไว้ที่ PC หรือสแกน QR ด้านล่างเพื่อเปิดหน้าเดียวกันนี้บนมือถือได้ทันที</p>
+
+    <div class="qr-box">
+      <img id="qrImg" alt="QR สแกนเปิดหน้านี้บนมือถือ" width="150" height="150">
+      <div class="qr-caption">📱 สแกนเพื่อเปิดหน้านี้บนมือถือ</div>
+    </div>
 
     <div class="ctrl-row">
       <button class="ctrl-btn stop" id="btnEmergencyStop" disabled>
@@ -77,6 +90,14 @@
   </div>
 
   <script>
+    // สร้าง QR ทันทีที่โหลดหน้า — ไม่ต้องกดปุ่มอะไรเพิ่ม (ใช้บริการฟรี api.qrserver.com ไม่ต้องมี library)
+    // ข้อมูลใน QR คือ URL ของหน้านี้เอง (window.location.href) — สแกนแล้วเปิดหน้าเดียวกันนี้บนมือถือได้ตรงๆ
+    (function setupQR() {
+      const url = window.location.href;
+      const qrImg = document.getElementById("qrImg");
+      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}`;
+    })();
+
     // โครง event handler ไว้ก่อน — ยังไม่ผูกกับ job จริง (Phase 1)
     // Phase 2-3 จะเปลี่ยนจาก disabled เป็นเชื่อม backend job queue ตามแผนที่คุยกันไว้
     document.getElementById("btnPauseResume").addEventListener("click", function () {
