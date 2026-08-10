@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CM POS Recipe Checker</title>
-<link rel="stylesheet" href="style.css?v=5">
+<link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
 
@@ -20,53 +20,54 @@
     <label class="settings-label" for="fontDisplay">ฟอนต์หัวข้อ (Display / อังกฤษ)</label>
     <select class="settings-select" id="fontDisplay">
       <optgroup label="Serif">
-        <option value="Cormorant Garamond">Cormorant Garamond (ปัจจุบัน)</option>
-        <option value="Playfair Display">Playfair Display</option>
-        <option value="EB Garamond">EB Garamond</option>
+        <option value="Cormorant Garamond" style="font-family:'Cormorant Garamond',serif;">Cormorant Garamond</option>
+        <option value="Playfair Display" style="font-family:'Playfair Display',serif;">Playfair Display</option>
+        <option value="EB Garamond" style="font-family:'EB Garamond',serif;">EB Garamond</option>
       </optgroup>
       <optgroup label="Sans Serif">
-        <option value="Inter">Inter</option>
-        <option value="Hind Siliguri">Hind Siliguri</option>
+        <option value="Inter" style="font-family:'Inter',sans-serif;">Inter</option>
+        <option value="Hind Siliguri" style="font-family:'Hind Siliguri',sans-serif;">Hind Siliguri (ค่าเริ่มต้น)</option>
       </optgroup>
       <optgroup label="Handwriting">
-        <option value="Patrick Hand">Patrick Hand</option>
-        <option value="Indie Flower">Indie Flower</option>
+        <option value="Patrick Hand" style="font-family:'Patrick Hand',cursive;">Patrick Hand</option>
+        <option value="Indie Flower" style="font-family:'Indie Flower',cursive;">Indie Flower</option>
       </optgroup>
       <optgroup label="Script">
-        <option value="Parisienne">Parisienne</option>
-        <option value="Yellowtail">Yellowtail</option>
+        <option value="Parisienne" style="font-family:'Parisienne',cursive;">Parisienne</option>
+        <option value="Yellowtail" style="font-family:'Yellowtail',cursive;">Yellowtail</option>
       </optgroup>
       <optgroup label="Display">
-        <option value="Yeseva One">Yeseva One</option>
-        <option value="Lobster">Lobster</option>
+        <option value="Yeseva One" style="font-family:'Yeseva One',serif;">Yeseva One</option>
+        <option value="Lobster" style="font-family:'Lobster',cursive;">Lobster</option>
       </optgroup>
     </select>
 
     <label class="settings-label" for="fontBody">ฟอนต์เนื้อหา (ไทย)</label>
     <select class="settings-select" id="fontBody">
       <optgroup label="มีหัว">
-        <option value="Sarabun">Sarabun (ปัจจุบัน)</option>
-        <option value="Trirong">Trirong</option>
+        <option value="Sarabun" style="font-family:'Sarabun',sans-serif;">Sarabun</option>
+        <option value="Trirong" style="font-family:'Trirong',serif;">Trirong</option>
       </optgroup>
       <optgroup label="ไม่มีหัว">
-        <option value="Kanit">Kanit</option>
-        <option value="Prompt">Prompt</option>
+        <option value="Kanit" style="font-family:'Kanit',sans-serif;">Kanit</option>
+        <option value="Prompt" style="font-family:'Prompt',sans-serif;">Prompt</option>
       </optgroup>
       <optgroup label="ลายมือ">
-        <option value="Itim">Itim</option>
-        <option value="Mali">Mali</option>
+        <option value="Itim" style="font-family:'Itim',cursive;">Itim</option>
+        <option value="Mali" style="font-family:'Mali',cursive;">Mali (ค่าเริ่มต้น)</option>
       </optgroup>
       <optgroup label="คัดลายมือ">
-        <option value="Niramit">Niramit</option>
-        <option value="Charm">Charm</option>
+        <option value="Niramit" style="font-family:'Niramit',sans-serif;">Niramit</option>
+        <option value="Charm" style="font-family:'Charm',cursive;">Charm</option>
       </optgroup>
       <optgroup label="ประดิษฐ์">
-        <option value="Chonburi">Chonburi</option>
-        <option value="Pattaya">Pattaya</option>
+        <option value="Chonburi" style="font-family:'Chonburi',cursive;">Chonburi</option>
+        <option value="Pattaya" style="font-family:'Pattaya',cursive;">Pattaya</option>
       </optgroup>
     </select>
 
-    <button class="settings-reset" id="settingsReset">ล้างกลับค่าเริ่มต้น</button>
+    <p class="settings-note">เลือกแล้วบันทึกเป็นค่าเริ่มต้นลงเครื่องนี้ให้อัตโนมัติทันที — ครั้งหน้าเปิดมาจะเจอฟอนต์เดิมเสมอ</p>
+    <button class="settings-reset" id="settingsReset">ล้างกลับค่าเริ่มต้น (Hind Siliguri / Mali)</button>
   </div>
 
   <header class="hero">
@@ -95,9 +96,9 @@
         <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="dropzone-icon"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <p class="dropzone-text">ลากไฟล์มาวาง หรือ <button class="dropzone-btn" id="btnChooseFiles" type="button">เลือกไฟล์ .xlsx</button></p>
         <p class="dropzone-hint">เลือกได้ทีเดียวหลายไฟล์ — เพิ่ม/ลบทีหลังได้เสมอ</p>
-      </div>
 
-      <ul class="file-list" id="fileList"></ul>
+        <ul class="file-list" id="fileList"></ul>
+      </div>
 
       <div class="run-row">
         <button class="btn-primary" id="btnRun">
@@ -108,44 +109,6 @@
       </div>
     </section>
 
-    <section class="results-section" id="resultsSection" hidden>
-      <hr class="rule">
-      <h2 class="section-title">ผลการเทียบ</h2>
-
-      <div class="summary-row" id="summaryRow"></div>
-
-      <div class="toolbar">
-        <div class="filter-row" id="filterRow"></div>
-        <button class="btn-ghost" id="btnExport">
-          <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="btn-icon-sm"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Export CSV
-        </button>
-      </div>
-
-      <div class="search-row">
-        <div class="search-box">
-          <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="search-icon"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3" stroke-linecap="round"/></svg>
-          <input type="text" id="searchInput" placeholder="ค้นหา... รหัสไอเท็ม, ชื่อ, หน่วย, สถานะ อะไรก็ได้">
-        </div>
-        <div class="page-size-box">
-          <label for="pageSizeSelect">แสดง</label>
-          <select id="pageSizeSelect">
-            <option value="5">5</option>
-            <option value="10" selected>10</option>
-            <option value="15">15</option>
-            <option value="25">25</option>
-            <option value="50">50</option>
-            <option value="100">100</option>
-          </select>
-          <span>แถว/หน้าจอ</span>
-        </div>
-        <span class="search-count" id="searchCount"></span>
-      </div>
-
-      <div id="groupsContainer"></div>
-      <div class="pagination-bar" id="paginationBar"></div>
-    </section>
-
   </main>
 
   <footer>
@@ -154,6 +117,6 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="app.js?v=5"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>
