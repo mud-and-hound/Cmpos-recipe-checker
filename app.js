@@ -105,6 +105,9 @@ document.getElementById("btnRun").addEventListener("click", async () => {
 
     currentToken = data.token;
     currentSummary = data.summary;
+    // เก็บลง sessionStorage — ไว้กลับมาที่หน้านี้จากหน้าอื่น (เช่น /log/) แล้วข้อมูลยังอยู่ ไม่ต้องอัปโหลดใหม่
+    sessionStorage.setItem("cmposChecker.token", currentToken);
+    sessionStorage.setItem("cmposChecker.summary", JSON.stringify(currentSummary));
     setHint(`เช็คเสร็จแล้ว — ${data.summary.total_rows} รายการ ใน ${data.summary.total_groups} เมนู/สูตร`);
     await loadResults("all");
     document.getElementById("resultsSection").hidden = false;
@@ -209,7 +212,7 @@ function applySearchAndReset() {
       <thead>
         <tr>
           <th>No.</th><th>Recipe</th><th>Name Menu</th><th>Item Code</th><th>Item Description</th>
-          <th>QTY</th><th>Small Unit</th><th>สถานะ</th><th>ค่าที่ถูกต้อง</th><th>เหตุผล</th>
+          <th>QTY</th><th>Small Unit</th><th>สถานะ</th><th>ค่าที่ถูกต้อง</th><th>เหตุผล</th><th>📍</th>
         </tr>
       </thead>
       <tbody id="rowsTbody">${bodyHtml}</tbody>
@@ -217,6 +220,7 @@ function applySearchAndReset() {
     </div>
   `;
   bindGroupCopyButtons(container);
+  bindLocPopovers(container);
   setupFadeWindow();
 }
 
@@ -224,6 +228,7 @@ function buildGroupRowsHtml(g, menuNo) {
   let html = "";
   g.rows.forEach((r, ri) => {
     const isFirstRow = ri === 0;
+    const locId = `loc-${menuNo}-${ri}-${Math.random().toString(36).slice(2, 7)}`;
     html += `
       <tr class="fade-row ${isFirstRow ? "menu-start" : ""}">
         <td class="col-no">${isFirstRow ? menuNo : ""}</td>
@@ -236,17 +241,49 @@ function buildGroupRowsHtml(g, menuNo) {
         <td><span class="dot dot-${r.status}"></span>${statusThLabel[r.status] || r.status}</td>
         <td class="qty-new">${r.final_qty ?? "—"} ${r.final_unit || ""}</td>
         <td class="note">${r.note || ""}</td>
+        <td class="col-loc" style="position:relative;">
+          <button class="loc-btn" data-target="${locId}" title="ดูตำแหน่งในไฟล์ต้นฉบับ">ⓘ</button>
+          <div class="loc-popover" id="${locId}" hidden>
+            <div><b>ไฟล์:</b> ${r.source_file || "—"}</div>
+            <div><b>ชีท:</b> ${r.sheet || "—"}</div>
+            <div><b>แถวที่:</b> ${r.row_number ?? "—"}</div>
+            <div><b>ประเภท:</b> ${g.recipe_type === "WIP" ? "🧪 WIP" : "🍳 Recipe (FG)"}</div>
+          </div>
+        </td>
       </tr>`;
   });
   html += `
     <tr class="fade-row menu-gap">
-      <td colspan="7"></td>
+      <td colspan="8"></td>
       <td colspan="3" style="text-align:right;">
         <button class="group-copy" data-type="${g.recipe_type}" data-code="${g.parent_code}">คัดลอกสำหรับ Tampermonkey</button>
       </td>
     </tr>`;
   return html;
 }
+
+/** เปิด/ปิด popover ตำแหน่งไฟล์ — กันเปิดค้างหลายอันพร้อมกัน (ปิดอันเก่าก่อนเปิดอันใหม่) */
+function bindLocPopovers(scope) {
+  scope.querySelectorAll(".loc-btn").forEach((btn) => {
+    if (btn.dataset.bound) return;
+    btn.dataset.bound = "1";
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const pop = document.getElementById(btn.dataset.target);
+      const wasHidden = pop.hidden;
+      document.querySelectorAll(".loc-popover").forEach((p) => (p.hidden = true));
+      pop.hidden = !wasHidden;
+    });
+  });
+  // คลิกที่อื่นแล้วปิด popover ทั้งหมด
+  if (!document.body.dataset.locGlobalBound) {
+    document.body.dataset.locGlobalBound = "1";
+    document.addEventListener("click", () => {
+      document.querySelectorAll(".loc-popover").forEach((p) => (p.hidden = true));
+    });
+  }
+}
+
 
 /**
  * หัวใจของ "หน้าต่างเลื่อนแบบ conveyor":
@@ -408,4 +445,22 @@ function loadFontPrefs() {
     applyFont("display", "Cormorant Garamond");
     applyFont("body", "Sarabun");
   });
+})();
+
+// ---------- คืนค่าผลลัพธ์เดิมจาก sessionStorage (ถ้ามี) — เผื่อกลับมาจากหน้า /log/ ----------
+(function restoreFromSession() {
+  const savedToken = sessionStorage.getItem("cmposChecker.token");
+  const savedSummaryRaw = sessionStorage.getItem("cmposChecker.summary");
+  if (!savedToken || !savedSummaryRaw) return;
+  try {
+    currentToken = savedToken;
+    currentSummary = JSON.parse(savedSummaryRaw);
+    loadResults("all").then(() => {
+      document.getElementById("resultsSection").hidden = false;
+    });
+  } catch (e) {
+    // sessionStorage เสีย/parse ไม่ได้ — ปล่อยผ่าน ให้ผู้ใช้อัปโหลดใหม่ตามปกติ
+    sessionStorage.removeItem("cmposChecker.token");
+    sessionStorage.removeItem("cmposChecker.summary");
+  }
 })();
