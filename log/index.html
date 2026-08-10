@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ติดตามงาน — CM POS Recipe Checker</title>
-<link rel="stylesheet" href="../style.css?v=2">
+<link rel="stylesheet" href="../style.css?v=3">
 <style>
   .log-page-wrap { max-width: 880px; margin: 0 auto; padding: 40px 24px 80px; }
   .log-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
@@ -90,12 +90,27 @@
   </div>
 
   <script>
-    // สร้าง QR ทันทีที่โหลดหน้า — ไม่ต้องกดปุ่มอะไรเพิ่ม (ใช้บริการฟรี api.qrserver.com ไม่ต้องมี library)
-    // ข้อมูลใน QR คือ URL ของหน้านี้เอง (window.location.href) — สแกนแล้วเปิดหน้าเดียวกันนี้บนมือถือได้ตรงๆ
+    // สร้าง QR ทันทีที่โหลดหน้า — มี fallback 2 ชั้น เผื่อบริการหลักโหลดไม่ขึ้น
     (function setupQR() {
       const url = window.location.href;
+      const encoded = encodeURIComponent(url);
       const qrImg = document.getElementById("qrImg");
-      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}`;
+      const providers = [
+        `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encoded}`,
+        `https://chart.googleapis.com/chart?cht=qr&chs=150x150&chl=${encoded}`,
+        `https://quickchart.io/qr?text=${encoded}&size=150`,
+      ];
+      let providerIdx = 0;
+      qrImg.addEventListener("error", () => {
+        providerIdx++;
+        if (providerIdx < providers.length) {
+          qrImg.src = providers[providerIdx];
+        } else {
+          const box = qrImg.closest(".qr-box");
+          if (box) box.innerHTML = `<a href="${url}" style="color:var(--gold-bright);font-size:12px;">🔗 เปิดหน้านี้ (QR โหลดไม่ขึ้น)</a>`;
+        }
+      });
+      qrImg.src = providers[0];
     })();
 
     // โครง event handler ไว้ก่อน — ยังไม่ผูกกับ job จริง (Phase 1)
