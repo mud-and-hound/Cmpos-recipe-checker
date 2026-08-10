@@ -46,14 +46,16 @@ function renderFileList() {
   const listEl = document.getElementById("fileList");
   listEl.innerHTML = pendingFiles.map((f, idx) => `
     <li class="file-list-item" data-idx="${idx}">
-      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="file-icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+      <span class="file-icon"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span>
       <span class="file-name">${f.name}</span>
+      <span class="file-tag">XLSX</span>
       <span class="file-size">${formatFileSize(f.size)}</span>
       <button class="file-remove" data-idx="${idx}" title="ลบไฟล์นี้ออก">✕</button>
     </li>
   `).join("");
   listEl.querySelectorAll(".file-remove").forEach((btn) => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation(); // กันไม่ให้ click ทะลุไปโดน dropzone แล้วเปิด file picker ซ้อน
       pendingFiles.splice(parseInt(btn.dataset.idx, 10), 1);
       renderFileList();
     });
@@ -73,11 +75,18 @@ function addFiles(fileArray) {
 const dropzone = document.getElementById("fileDropzone");
 const fileInputMulti = document.getElementById("fileInputMulti");
 
+// ⚠️ ครอบทั้ง block นี้ด้วย if (dropzone) — เพราะตอนนี้ app.js ตัวเดียวถูกใช้ร่วมกันหลายหน้า
+// (index.html มี dropzone, แต่ result/index.html กับ log/index.html ไม่มี) กัน error ตอนหา element ไม่เจอ
+if (dropzone) {
 document.getElementById("btnChooseFiles").addEventListener("click", (e) => {
   e.stopPropagation();
   fileInputMulti.click();
 });
-dropzone.addEventListener("click", () => fileInputMulti.click());
+dropzone.addEventListener("click", (e) => {
+  // กันคลิกโดนรายการไฟล์ (fileList อยู่ใน dropzone เดียวกัน) แล้วเผลอเปิด file picker ซ้อน
+  if (e.target.closest(".file-list")) return;
+  fileInputMulti.click();
+});
 fileInputMulti.addEventListener("change", () => {
   addFiles([...fileInputMulti.files]);
   fileInputMulti.value = ""; // เคลียร์ ทำให้เลือกไฟล์ชื่อเดิมซ้ำได้ถ้าลบออกไปแล้วอยากเพิ่มกลับ
@@ -124,13 +133,12 @@ document.getElementById("btnRun").addEventListener("click", async () => {
 
     currentToken = data.token;
     currentSummary = data.summary;
-    // เก็บลง sessionStorage — ไว้กลับมาที่หน้านี้จากหน้าอื่น (เช่น /log/) แล้วข้อมูลยังอยู่ ไม่ต้องอัปโหลดใหม่
+    // เก็บลง sessionStorage — หน้า result/ จะอ่านจากตรงนี้ไปแสดงผลต่อ (แยกกันคนละ path จริงตามที่ตกลง)
     sessionStorage.setItem("cmposChecker.token", currentToken);
     sessionStorage.setItem("cmposChecker.summary", JSON.stringify(currentSummary));
-    setHint(`เช็คเสร็จแล้ว — ${data.summary.total_rows} รายการ ใน ${data.summary.total_groups} เมนู/สูตร`);
-    await loadResults("all");
-    document.getElementById("resultsSection").hidden = false;
-    document.getElementById("resultsSection").scrollIntoView({ behavior: "smooth" });
+    setHint(`เช็คเสร็จแล้ว — ${data.summary.total_rows} รายการ ใน ${data.summary.total_groups} เมนู/สูตร — กำลังพาไปหน้าผลลัพธ์...`);
+    // ⚠️ เปลี่ยนจากโชว์ผลลัพธ์ inline ในหน้าเดิม เป็น "พาไปหน้า /result/ แยกต่างหาก" ตามที่ตกลงกันไว้
+    window.location.href = "result/";
   } catch (err) {
     console.error(err);
     let msg = err.message;
@@ -143,6 +151,7 @@ document.getElementById("btnRun").addEventListener("click", async () => {
     btn.disabled = false;
   }
 });
+} // ปิด if (dropzone)
 
 // ---------- Results rendering ----------
 async function loadResults(status) {
@@ -365,22 +374,30 @@ function bindGroupCopyButtons(scope) {
   });
 }
 
-// ---------- ช่องค้นหา + page size ----------
-document.getElementById("searchInput").addEventListener("input", (e) => {
-  clearTimeout(searchDebounceTimer);
-  searchDebounceTimer = setTimeout(() => {
-    searchTerm = e.target.value;
+// ---------- ช่องค้นหา + page size (เฉพาะหน้าที่มี — result/index.html) ----------
+const searchInputEl = document.getElementById("searchInput");
+if (searchInputEl) {
+  searchInputEl.addEventListener("input", (e) => {
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(() => {
+      searchTerm = e.target.value;
+      applySearchAndReset();
+    }, 250); // debounce กันเรียก re-render ถี่เกินไปตอนพิมพ์เร็ว
+  });
+}
+
+const pageSizeSelectEl = document.getElementById("pageSizeSelect");
+if (pageSizeSelectEl) {
+  pageSizeSelectEl.addEventListener("change", (e) => {
+    pageSize = parseInt(e.target.value, 10);
     applySearchAndReset();
-  }, 250); // debounce กันเรียก re-render ถี่เกินไปตอนพิมพ์เร็ว
-});
+  });
+}
 
-document.getElementById("pageSizeSelect").addEventListener("change", (e) => {
-  pageSize = parseInt(e.target.value, 10);
-  applySearchAndReset();
-});
-
-// ---------- Export ----------
-document.getElementById("btnExport").addEventListener("click", async () => {
+// ---------- Export (เฉพาะหน้าที่มี) ----------
+const btnExportEl = document.getElementById("btnExport");
+if (btnExportEl) {
+btnExportEl.addEventListener("click", async () => {
   if (!currentToken) {
     showToast("ยังไม่มีผลลัพธ์ให้ export");
     return;
@@ -401,11 +418,14 @@ document.getElementById("btnExport").addEventListener("click", async () => {
     showToast(err.message);
   }
 });
+} // ปิด if (btnExportEl)
 
 // ==========================================================
 // Font Picker — โหลดฟอนต์จาก Google Fonts แบบ on-demand + จำค่าไว้
 // ==========================================================
 const FONT_STORAGE_KEY = "cmposRecipeChecker.fonts";
+const DEFAULT_DISPLAY_FONT = "Hind Siliguri";
+const DEFAULT_BODY_FONT = "Mali";
 const loadedFontLinks = {}; // ชื่อฟอนต์ -> <link> element กันโหลดซ้ำ
 
 function loadGoogleFont(familyName) {
@@ -446,12 +466,14 @@ function loadFontPrefs() {
   const btnReset = document.getElementById("settingsReset");
   if (!btn || !panel) return;
 
-  // โหลดค่าที่เคยเลือกไว้ (ถ้ามี)
+  // โหลดค่าที่เคยเลือกไว้ (ถ้ามี) — ถ้ายังไม่เคยตั้งเลย ใช้ค่าเริ่มต้นใหม่ (Hind Siliguri / Mali) ทันที
   const saved = loadFontPrefs();
-  if (saved) {
-    if (saved.display) { selDisplay.value = saved.display; applyFont("display", saved.display); }
-    if (saved.body) { selBody.value = saved.body; applyFont("body", saved.body); }
-  }
+  const initDisplay = (saved && saved.display) || DEFAULT_DISPLAY_FONT;
+  const initBody = (saved && saved.body) || DEFAULT_BODY_FONT;
+  selDisplay.value = initDisplay;
+  selBody.value = initBody;
+  applyFont("display", initDisplay);
+  applyFont("body", initBody);
 
   btn.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -464,18 +486,21 @@ function loadFontPrefs() {
   selDisplay.addEventListener("change", () => {
     applyFont("display", selDisplay.value);
     saveFontPrefs(selDisplay.value, selBody.value);
+    showToast(`บันทึกฟอนต์หัวข้อ "${selDisplay.value}" เป็นค่าเริ่มต้นแล้ว`);
   });
   selBody.addEventListener("change", () => {
     applyFont("body", selBody.value);
     saveFontPrefs(selDisplay.value, selBody.value);
+    showToast(`บันทึกฟอนต์เนื้อหา "${selBody.value}" เป็นค่าเริ่มต้นแล้ว`);
   });
 
   btnReset.addEventListener("click", () => {
     localStorage.removeItem(FONT_STORAGE_KEY);
-    selDisplay.value = "Cormorant Garamond";
-    selBody.value = "Sarabun";
-    applyFont("display", "Cormorant Garamond");
-    applyFont("body", "Sarabun");
+    selDisplay.value = DEFAULT_DISPLAY_FONT;
+    selBody.value = DEFAULT_BODY_FONT;
+    applyFont("display", DEFAULT_DISPLAY_FONT);
+    applyFont("body", DEFAULT_BODY_FONT);
+    showToast("กลับไปใช้ฟอนต์เริ่มต้นแล้ว");
   });
 })();
 
@@ -505,17 +530,21 @@ function loadFontPrefs() {
   qrImg.src = providers[0];
 })();
 
-// ---------- คืนค่าผลลัพธ์เดิมจาก sessionStorage (ถ้ามี) — เผื่อกลับมาจากหน้า /log/ ----------
+// ---------- โหลดผลลัพธ์จาก sessionStorage — ใช้เฉพาะหน้าที่มีตารางผลลัพธ์ (result/index.html) ----------
+// index.html ไม่มี groupsContainer แล้ว (ย้ายผลลัพธ์ไปหน้า /result/ แยกต่างหาก) โค้ดนี้เลยข้ามไปเงียบๆ บนหน้านั้น
 (function restoreFromSession() {
+  if (!document.getElementById("groupsContainer")) return;
   const savedToken = sessionStorage.getItem("cmposChecker.token");
   const savedSummaryRaw = sessionStorage.getItem("cmposChecker.summary");
-  if (!savedToken || !savedSummaryRaw) return;
+  if (!savedToken || !savedSummaryRaw) {
+    const container = document.getElementById("groupsContainer");
+    if (container) container.innerHTML = `<p class="hint">ยังไม่มีผลลัพธ์ — <a href="../" style="color:var(--gold-bright);">กลับไปอัปโหลดไฟล์ก่อน</a></p>`;
+    return;
+  }
   try {
     currentToken = savedToken;
     currentSummary = JSON.parse(savedSummaryRaw);
-    loadResults("all").then(() => {
-      document.getElementById("resultsSection").hidden = false;
-    });
+    loadResults("all");
   } catch (e) {
     // sessionStorage เสีย/parse ไม่ได้ — ปล่อยผ่าน ให้ผู้ใช้อัปโหลดใหม่ตามปกติ
     sessionStorage.removeItem("cmposChecker.token");
