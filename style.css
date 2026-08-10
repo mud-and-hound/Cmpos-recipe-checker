@@ -365,3 +365,27 @@ footer { text-align: center; padding: 32px 24px 60px; color: var(--slate); font-
   transition: opacity .18s linear;
   will-change: opacity;
 }
+
+/* ---------- ปุ่มไอคอนตำแหน่งไฟล์ + popover ---------- */
+.loc-btn {
+  width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(201,169,97,.4);
+  background: var(--navy-lift); color: var(--gold-bright); font-size: 12px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; padding: 0;
+}
+.loc-btn:hover { background: var(--gold-bright); color: var(--navy-deep); }
+.loc-popover {
+  position: absolute; right: 0; top: 28px; z-index: 50; width: 230px;
+  background: var(--navy-deep); border: 1px solid var(--gold-bright); border-radius: 6px;
+  padding: 10px 12px; font-size: 11.5px; color: var(--ivory); line-height: 1.8;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5);
+}
+.loc-popover b { color: var(--gold-bright); font-weight: 600; margin-right: 4px; }
+
+/* ---------- ลิงก์ไปหน้า Log ---------- */
+.log-link-btn {
+  position: fixed; top: 20px; right: 68px; z-index: 40;
+  background: var(--navy-lift); border: 1px solid rgba(201,169,97,.3); border-radius: 20px;
+  padding: 8px 16px; color: var(--gold-bright); text-decoration: none;
+  font-family: var(--font-body); font-size: 12.5px; font-weight: 600;
+}
+.log-link-btn:hover { background: var(--gold-bright); color: var(--navy-deep); }
