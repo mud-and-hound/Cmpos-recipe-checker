@@ -7,6 +7,7 @@ const API_KEY = "recipe2026check";           // ต้องตรงกับ R
 // ==========================================================
 let currentToken = null;
 let currentSummary = null;
+let pendingFiles = []; // รายการไฟล์ที่เลือกไว้ (ยังไม่ได้อัปโหลด) — เพิ่ม/ลบได้ก่อนกด "เช็คกับ CM POS"
 
 // ---------- ค้นหา + หน้าต่างเลื่อนแบบ conveyor (fade ตามตำแหน่ง scroll จริง) ----------
 let allGroups = [];          // ข้อมูลทั้งหมดที่ backend ส่งมา (หลัง filter สถานะแล้ว)
@@ -34,62 +35,80 @@ function setHint(msg, isError = false) {
   h.classList.toggle("error", isError);
 }
 
-// ---------- Orb panel open/close ----------
-document.querySelectorAll(".orb").forEach((orb) => {
-  orb.addEventListener("click", (e) => {
-    e.stopPropagation();
-    const wrap = orb.closest(".orb-wrap");
-    const isOpen = wrap.classList.contains("open");
-    document.querySelectorAll(".orb-wrap.open").forEach((w) => {
-      w.classList.remove("open");
-      w.querySelector(".orb").setAttribute("aria-expanded", "false");
-    });
-    if (!isOpen) {
-      wrap.classList.add("open");
-      orb.setAttribute("aria-expanded", "true");
-    }
-  });
-});
-document.addEventListener("click", () => {
-  document.querySelectorAll(".orb-wrap.open").forEach((w) => w.classList.remove("open"));
-});
-document.querySelectorAll(".panel").forEach((p) => p.addEventListener("click", (e) => e.stopPropagation()));
+// ---------- File list: เพิ่ม/ลบไฟล์ได้อิสระ (ไม่จำกัดจำนวน ไม่ผูกหมวดตายตัว) ----------
+function formatFileSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+}
 
-// ---------- File chooser ----------
-document.querySelectorAll(".panel-choose").forEach((btn) => {
-  btn.addEventListener("click", () => document.getElementById(btn.dataset.for).click());
-});
-["food", "beverage", "dessert"].forEach((key) => {
-  const input = document.getElementById(`file-${key}`);
-  input.addEventListener("change", () => {
-    const fnEl = document.getElementById(`filename-${key}`);
-    const orb = document.querySelector(`.orb[data-target="panel-${key}"]`);
-    if (input.files.length) {
-      fnEl.textContent = input.files[0].name;
-      orb.classList.add("has-file");
-    } else {
-      fnEl.textContent = "ยังไม่ได้เลือกไฟล์";
-      orb.classList.remove("has-file");
-    }
+function renderFileList() {
+  const listEl = document.getElementById("fileList");
+  listEl.innerHTML = pendingFiles.map((f, idx) => `
+    <li class="file-list-item" data-idx="${idx}">
+      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" class="file-icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+      <span class="file-name">${f.name}</span>
+      <span class="file-size">${formatFileSize(f.size)}</span>
+      <button class="file-remove" data-idx="${idx}" title="ลบไฟล์นี้ออก">✕</button>
+    </li>
+  `).join("");
+  listEl.querySelectorAll(".file-remove").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      pendingFiles.splice(parseInt(btn.dataset.idx, 10), 1);
+      renderFileList();
+    });
   });
+}
+
+function addFiles(fileArray) {
+  for (const f of fileArray) {
+    if (!f.name.toLowerCase().endsWith(".xlsx")) continue; // กันไฟล์ผิดชนิดหลุดเข้ามา (เช่นลาก .txt มาวาง)
+    // กันไฟล์ชื่อซ้ำ+ขนาดเท่ากันถูกเพิ่มซ้ำ (เผื่อเลือกไฟล์เดิมซ้ำโดยไม่ตั้งใจ)
+    const dup = pendingFiles.some((p) => p.name === f.name && p.size === f.size);
+    if (!dup) pendingFiles.push(f);
+  }
+  renderFileList();
+}
+
+const dropzone = document.getElementById("fileDropzone");
+const fileInputMulti = document.getElementById("fileInputMulti");
+
+document.getElementById("btnChooseFiles").addEventListener("click", (e) => {
+  e.stopPropagation();
+  fileInputMulti.click();
+});
+dropzone.addEventListener("click", () => fileInputMulti.click());
+fileInputMulti.addEventListener("change", () => {
+  addFiles([...fileInputMulti.files]);
+  fileInputMulti.value = ""; // เคลียร์ ทำให้เลือกไฟล์ชื่อเดิมซ้ำได้ถ้าลบออกไปแล้วอยากเพิ่มกลับ
+});
+
+// Drag & drop
+["dragenter", "dragover"].forEach((evt) => {
+  dropzone.addEventListener(evt, (e) => {
+    e.preventDefault();
+    dropzone.classList.add("dragover");
+  });
+});
+["dragleave", "drop"].forEach((evt) => {
+  dropzone.addEventListener(evt, (e) => {
+    e.preventDefault();
+    dropzone.classList.remove("dragover");
+  });
+});
+dropzone.addEventListener("drop", (e) => {
+  addFiles([...e.dataTransfer.files]);
 });
 
 // ---------- Run ----------
 document.getElementById("btnRun").addEventListener("click", async () => {
   const btn = document.getElementById("btnRun");
-  const fd = new FormData();
-  let hasAny = false;
-  for (const key of ["food", "beverage", "dessert"]) {
-    const input = document.getElementById(`file-${key}`);
-    if (input.files.length) {
-      fd.append(`file_${key}`, input.files[0]);
-      hasAny = true;
-    }
-  }
-  if (!hasAny) {
+  if (!pendingFiles.length) {
     setHint("กรุณาเลือกไฟล์อย่างน้อย 1 ไฟล์ก่อน", true);
     return;
   }
+  const fd = new FormData();
+  pendingFiles.forEach((f) => fd.append("files", f));
 
   btn.disabled = true;
   setHint("กำลังอัปโหลด + เทียบกับ CM POS... อาจใช้เวลาสักครู่");
@@ -302,7 +321,10 @@ function setupFadeWindow() {
   scrollBox.style.maxHeight = `${Math.round(rowHeight * pageSize)}px`;
 
   if (rowFadeObserver) rowFadeObserver.disconnect();
-  const thresholds = Array.from({ length: 21 }, (_, i) => i / 20); // 0%, 5%, ..., 100%
+  // ⚠️ ลดจาก 21 ระดับ (0,5,10,...,100%) เหลือ 9 ระดับ — ข้อมูลหลักพันแถวขึ้นไป เจอกระตุกจริง
+  // เพราะ callback ยิงถี่เกินไปตอน scroll (ทุกแถวมี observer เดียวกัน จำนวนครั้งที่ยิง = แถว x thresholds)
+  // ลดจำนวนขั้นลงเหลือ 9 (ทุก 12.5%) ยัง fade นุ่มพอมองด้วยตาปกติ แต่ลด callback ลงกว่าครึ่ง
+  const thresholds = Array.from({ length: 9 }, (_, i) => i / 8); // 0%, 12.5%, ..., 100%
   rowFadeObserver = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
