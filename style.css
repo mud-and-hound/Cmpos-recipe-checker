@@ -389,3 +389,12 @@ footer { text-align: center; padding: 32px 24px 60px; color: var(--slate); font-
   font-family: var(--font-body); font-size: 12.5px; font-weight: 600;
 }
 .log-link-btn:hover { background: var(--gold-bright); color: var(--navy-deep); }
+
+/* ---------- QR สแกนเปิดหน้านี้บนมือถือ (ใช้ทั้ง index.html และ log/index.html) ---------- */
+.qr-box {
+  display: flex; align-items: center; gap: 14px; margin: 22px auto 0; width: fit-content;
+  background: var(--navy-lift); border: 1px solid rgba(201,169,97,.3); border-radius: 10px;
+  padding: 14px 18px;
+}
+.qr-box img { display: block; border-radius: 6px; background: #fff; padding: 5px; }
+.qr-caption { font-family: var(--font-body); font-size: 12px; color: var(--ivory); max-width: 120px; line-height: 1.6; text-align: left; }
