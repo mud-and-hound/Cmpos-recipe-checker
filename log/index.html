@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ติดตามงาน — CM POS Recipe Checker</title>
+<link rel="stylesheet" href="../style.css?v=2">
+<style>
+  .log-page-wrap { max-width: 880px; margin: 0 auto; padding: 40px 24px 80px; }
+  .log-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+  .log-nav a { color: var(--gold-bright); text-decoration: none; font-family: var(--font-body); font-size: 13px; }
+  .log-nav a:hover { text-decoration: underline; }
+  .log-title { font-family: var(--font-display); font-size: 28px; color: var(--ivory); margin-bottom: 6px; }
+  .log-sub { font-family: var(--font-body); font-size: 13px; color: var(--slate); margin-bottom: 28px; }
+
+  .ctrl-row { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+  .ctrl-btn {
+    flex: 1; min-width: 140px; padding: 14px 16px; border-radius: 8px; border: 1px solid rgba(201,169,97,.3);
+    background: var(--navy-lift); color: var(--ivory); font-family: var(--font-body); font-size: 13px; font-weight: 600;
+    cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: all .15s;
+  }
+  .ctrl-btn .ctrl-icon { font-size: 20px; }
+  .ctrl-btn.stop { border-color: rgba(220,38,38,.5); }
+  .ctrl-btn.stop:hover { background: rgba(220,38,38,.15); }
+  .ctrl-btn.pause { border-color: rgba(217,119,6,.5); }
+  .ctrl-btn.pause:hover { background: rgba(217,119,6,.15); }
+  .ctrl-btn.pause.active { background: rgba(217,119,6,.25); border-color: #d97706; }
+  .ctrl-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  .placeholder-box {
+    background: var(--navy-lift); border: 1px dashed rgba(201,169,97,.35); border-radius: 10px;
+    padding: 28px 24px; text-align: center; color: var(--slate); font-family: var(--font-body); font-size: 13px; line-height: 1.9;
+  }
+  .placeholder-box b { color: var(--gold-bright); }
+
+  .console-box {
+    background: #0a0f1e; border: 1px solid rgba(201,169,97,.25); border-radius: 10px;
+    padding: 16px 18px; font-family: ui-monospace, 'Courier New', monospace; font-size: 12px;
+    color: #94a3b8; min-height: 200px; line-height: 1.8; margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+  <div class="log-page-wrap">
+    <div class="log-nav">
+      <a href="../">← กลับหน้าอัปโหลด</a>
+      <span style="color:var(--slate);font-size:12px;">CM POS Recipe Checker</span>
+    </div>
+
+    <h1 class="log-title">📡 ติดตามงาน</h1>
+    <p class="log-sub">ดูสถานะการรันงานแบบ real-time — เปิดหน้านี้ค้างไว้ หรือสแกน QR จากมือถือเพื่อดูขณะทำงานอยู่ที่ PC</p>
+
+    <div class="ctrl-row">
+      <button class="ctrl-btn stop" id="btnEmergencyStop" disabled>
+        <span class="ctrl-icon">🛑</span>
+        หยุดฉุกเฉิน (ล้างทันที)
+      </button>
+      <button class="ctrl-btn pause" id="btnPauseResume" disabled>
+        <span class="ctrl-icon">⏸</span>
+        หยุดชั่วคราว
+      </button>
+    </div>
+
+    <div class="placeholder-box">
+      🚧 <b>หน้านี้เป็นโครงเริ่มต้น (Phase 1)</b><br>
+      ยังไม่เชื่อมกับระบบ job queue จริง — ปุ่มควบคุมด้านบนจะใช้งานได้เมื่อสร้างระบบส่งงาน
+      จากหน้าอัปโหลดเข้า Tampermonkey โดยตรงเสร็จแล้ว (Phase 2-3)<br><br>
+      ตอนนี้ log ที่เห็นด้านล่างเป็นข้อมูลตัวอย่างเฉยๆ เพื่อโชว์หน้าตา
+    </div>
+
+    <div class="console-box" id="consoleBox">
+      <div>[ตัวอย่าง] 10:32:01 — เริ่มงาน NCGD11136 (WIP)</div>
+      <div>[ตัวอย่าง] 10:32:04 — ค้นหา NCRF12067 สำเร็จ</div>
+      <div>[ตัวอย่าง] 10:32:09 — เติม Quantity/Unit สำเร็จ</div>
+      <div style="color:#6b7280;">— รอเชื่อมกับงานจริงใน Phase ถัดไป —</div>
+    </div>
+  </div>
+
+  <script>
+    // โครง event handler ไว้ก่อน — ยังไม่ผูกกับ job จริง (Phase 1)
+    // Phase 2-3 จะเปลี่ยนจาก disabled เป็นเชื่อม backend job queue ตามแผนที่คุยกันไว้
+    document.getElementById("btnPauseResume").addEventListener("click", function () {
+      this.classList.toggle("active");
+      const icon = this.querySelector(".ctrl-icon");
+      const isPaused = this.classList.contains("active");
+      icon.textContent = isPaused ? "▶" : "⏸";
+      this.lastChild.textContent = isPaused ? "กำลังพัก — กดเพื่อทำต่อ" : "หยุดชั่วคราว";
+    });
+  </script>
+</body>
+</html>
