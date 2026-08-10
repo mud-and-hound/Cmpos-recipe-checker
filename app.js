@@ -447,6 +447,32 @@ function loadFontPrefs() {
   });
 })();
 
+// ---------- QR สแกนเปิดหน้านี้บนมือถือ — โผล่ทันทีตอนโหลดหน้า ไม่ต้องกดอะไรเพิ่ม ----------
+// มี fallback 2 ชั้น เผื่อบริการ QR หลักโหลดไม่ขึ้น (เน็ตร้าน/firewall บล็อกบางโดเมนได้)
+(function setupQR() {
+  const qrImg = document.getElementById("qrImg");
+  if (!qrImg) return;
+  const url = window.location.href;
+  const encoded = encodeURIComponent(url);
+  const providers = [
+    `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encoded}`,
+    `https://chart.googleapis.com/chart?cht=qr&chs=120x120&chl=${encoded}`,
+    `https://quickchart.io/qr?text=${encoded}&size=120`,
+  ];
+  let providerIdx = 0;
+  qrImg.addEventListener("error", () => {
+    providerIdx++;
+    if (providerIdx < providers.length) {
+      qrImg.src = providers[providerIdx];
+    } else {
+      // ทุกบริการล้มเหลว — ซ่อนรูปที่พัง โชว์ลิงก์ให้กดแทน (กัน alt text ตัวหนังสือโผล่ดูรก)
+      const box = qrImg.closest(".qr-box");
+      if (box) box.innerHTML = `<a href="${url}" style="color:var(--gold-bright);font-size:12px;">🔗 เปิดหน้านี้ (QR โหลดไม่ขึ้น)</a>`;
+    }
+  });
+  qrImg.src = providers[0];
+})();
+
 // ---------- คืนค่าผลลัพธ์เดิมจาก sessionStorage (ถ้ามี) — เผื่อกลับมาจากหน้า /log/ ----------
 (function restoreFromSession() {
   const savedToken = sessionStorage.getItem("cmposChecker.token");
