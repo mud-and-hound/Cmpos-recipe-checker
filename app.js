@@ -16,6 +16,7 @@ let pageSize = 10;           // จำนวน "เมนู" ต่อ 1 ห�
 let searchTerm = "";
 let currentPageIdx = 0;      // หน้าปัจจุบัน (0-based)
 let searchDebounceTimer = null;
+let expandedGroups = new Set(); // เก็บ key ของเมนูที่ถูกกดขยายดูครบแล้ว (ค่าเริ่มต้น = ย่อไว้หมด)
 
 const statusThLabel = {
   green: "ตรงกับ CM POS", yellow: "แปลงหน่วยอัตโนมัติ",
@@ -263,6 +264,7 @@ function renderCurrentPage() {
   `;
   bindGroupCopyButtons(container);
   bindLocPopovers(container);
+  bindGroupToggles(container);
   renderPaginationBar(totalPages);
 }
 
@@ -296,13 +298,28 @@ function renderPaginationBar(totalPages) {
 }
 
 function buildGroupRowsHtml(g, menuNo) {
+  const groupKey = `${g.recipe_type}:${g.parent_code}`;
+  const isExpanded = expandedGroups.has(groupKey);
+
+  // ⚠️ ค่าเริ่มต้น (ไม่ได้กดขยาย) โชว์แค่ "รายการที่มีปัญหา" (ไม่ใช่ 🟢 เขียว) ให้เห็นตรงประเด็นทันที
+  // ถ้าทั้งเมนูเขียวหมดจริงๆ ไม่มีปัญหาอะไรเลย ก็โชว์แค่แถวแรกไว้เป็นตัวแทน (ไม่โชว์ทุกแถวเปล่าประโยชน์)
+  const problemRows = g.rows.filter((r) => r.status !== "green");
+  const rowsToShow = isExpanded ? g.rows : (problemRows.length ? problemRows : [g.rows[0]]);
+  const hiddenCount = g.rows.length - rowsToShow.length;
+
   let html = "";
-  g.rows.forEach((r, ri) => {
+  rowsToShow.forEach((r, ri) => {
     const isFirstRow = ri === 0;
     const locId = `loc-${menuNo}-${ri}-${Math.random().toString(36).slice(2, 7)}`;
     html += `
       <tr class="${isFirstRow ? "menu-start" : ""}">
-        <td class="col-no">${isFirstRow ? menuNo : ""}</td>
+        <td class="col-no">
+          ${isFirstRow ? `
+            <button class="group-toggle" data-group="${escHtml(groupKey)}" title="${isExpanded ? "ย่อกลับ" : "ดูทั้งหมด"}">
+              ${isExpanded ? "▾" : "▸"}
+            </button> ${menuNo}
+          ` : ""}
+        </td>
         <td class="col-recipe">${isFirstRow ? `<span class="group-tag">${g.recipe_type}</span> <span class="code">${g.parent_code}</span>` : ""}</td>
         <td class="col-menuname">${isFirstRow ? (g.parent_name || "") : ""}</td>
         <td class="code">${r.ingredient_code}</td>
@@ -323,6 +340,18 @@ function buildGroupRowsHtml(g, menuNo) {
         </td>
       </tr>`;
   });
+
+  if (!isExpanded && hiddenCount > 0) {
+    html += `
+      <tr class="menu-hidden-hint">
+        <td colspan="11">
+          <button class="group-toggle-text" data-group="${escHtml(groupKey)}">
+            + อีก ${hiddenCount} รายการที่ตรงกับ CM POS อยู่แล้ว (ซ่อนไว้ — กดเพื่อดูทั้งหมด)
+          </button>
+        </td>
+      </tr>`;
+  }
+
   html += `
     <tr class="menu-gap">
       <td colspan="8"></td>
@@ -331,6 +360,25 @@ function buildGroupRowsHtml(g, menuNo) {
       </td>
     </tr>`;
   return html;
+}
+
+function escHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+/** ผูกปุ่มย่อ/ขยายรายการต่อเมนู (ทั้งแบบไอคอนหัวแถว และแบบข้อความ "+N รายการ") */
+function bindGroupToggles(scope) {
+  scope.querySelectorAll(".group-toggle, .group-toggle-text").forEach((btn) => {
+    if (btn.dataset.bound) return;
+    btn.dataset.bound = "1";
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const key = btn.dataset.group;
+      if (expandedGroups.has(key)) expandedGroups.delete(key);
+      else expandedGroups.add(key);
+      renderCurrentPage(); // re-render หน้าปัจจุบันใหม่ทั้งหน้า ให้ state ตรงกัน
+    });
+  });
 }
 
 /** เปิด/ปิด popover ตำแหน่งไฟล์ — กันเปิดค้างหลายอันพร้อมกัน (ปิดอันเก่าก่อนเปิดอันใหม่) */
