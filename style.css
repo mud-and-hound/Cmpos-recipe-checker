@@ -469,3 +469,10 @@ footer { text-align: center; padding: 32px 24px 60px; color: var(--slate); font-
   font-family: var(--font-body); font-size: 11.5px; padding: 4px 0; text-align: left; width: 100%;
 }
 .group-toggle-text:hover { color: var(--gold-bright); text-decoration: underline; }
+
+/* ---------- สรุปบรรทัดเดียวต่อเมนู (โฟกัสแดง/ไม่พบ) ---------- */
+.menu-summary-text {
+  font-family: var(--font-body); font-size: 12.5px; color: var(--ivory); line-height: 1.7;
+}
+.menu-summary-text .code { color: var(--gold-bright); font-weight: 600; }
+.menu-has-problem td.menu-summary-text { color: #fca5a5; }
