@@ -301,24 +301,57 @@ function buildGroupRowsHtml(g, menuNo) {
   const groupKey = `${g.recipe_type}:${g.parent_code}`;
   const isExpanded = expandedGroups.has(groupKey);
 
-  // ⚠️ ค่าเริ่มต้น (ไม่ได้กดขยาย) โชว์แค่ "รายการที่มีปัญหา" (ไม่ใช่ 🟢 เขียว) ให้เห็นตรงประเด็นทันที
-  // ถ้าทั้งเมนูเขียวหมดจริงๆ ไม่มีปัญหาอะไรเลย ก็โชว์แค่แถวแรกไว้เป็นตัวแทน (ไม่โชว์ทุกแถวเปล่าประโยชน์)
-  const problemRows = g.rows.filter((r) => r.status !== "green");
-  const rowsToShow = isExpanded ? g.rows : (problemRows.length ? problemRows : [g.rows[0]]);
-  const hiddenCount = g.rows.length - rowsToShow.length;
+  if (isExpanded) {
+    return buildGroupRowsFull(g, menuNo, groupKey);
+  }
+  return buildGroupRowsCollapsed(g, menuNo, groupKey);
+}
 
+/** โหมดย่อ (ค่าเริ่มต้นเสมอ) — 1 บรรทัดต่อเมนู โฟกัสแค่ 🔴 แดง/ไม่พบเท่านั้น (เหลือง/ส้มไม่ต้องโชว์ เช็คเองได้) */
+function buildGroupRowsCollapsed(g, menuNo, groupKey) {
+  const criticalRows = g.rows.filter((r) => r.status === "red" || r.status === "missing");
+  const shortReason = (r) => (r.status === "missing" ? "ไม่พบไอเท็มนี้" : "ต้องเช็คมือ");
+
+  let summaryHtml;
+  if (criticalRows.length > 0) {
+    const parts = criticalRows.map((r) =>
+      `<span class="code">${escHtml(r.ingredient_code)}</span> ${escHtml(r.ingredient_desc || "")} (${shortReason(r)})`
+    );
+    summaryHtml = `⚠️ ${criticalRows.length} รายการมีปัญหา: ${parts.join(", ")}`;
+  } else {
+    const convertedCount = g.rows.filter((r) => r.status === "yellow" || r.status === "orange").length;
+    summaryHtml = convertedCount > 0
+      ? `✅ ไม่มีปัญหาร้ายแรง — ${g.rows.length} รายการ (${convertedCount} แปลง/ประมาณการอัตโนมัติ เช็คเองได้)`
+      : `✅ ตรงกับ CM POS ทั้งหมด — ${g.rows.length} รายการ`;
+  }
+
+  return `
+    <tr class="menu-start ${criticalRows.length ? "menu-has-problem" : ""}">
+      <td class="col-no">
+        <button class="group-toggle" data-group="${escHtml(groupKey)}" title="ดูทั้งหมด">▸</button> ${menuNo}
+      </td>
+      <td class="col-recipe"><span class="group-tag">${g.recipe_type}</span> <span class="code">${g.parent_code}</span></td>
+      <td class="col-menuname">${g.parent_name || ""}</td>
+      <td colspan="8" class="menu-summary-text">${summaryHtml}</td>
+    </tr>
+    <tr class="menu-gap">
+      <td colspan="8"></td>
+      <td colspan="3" style="text-align:right;">
+        <button class="group-copy" data-type="${g.recipe_type}" data-code="${g.parent_code}">คัดลอกสำหรับ Tampermonkey</button>
+      </td>
+    </tr>`;
+}
+
+/** โหมดขยาย (กดปุ่ม ▾ แล้ว) — ตารางเต็มทุกแถวทุกคอลัมน์เหมือนเดิม */
+function buildGroupRowsFull(g, menuNo, groupKey) {
   let html = "";
-  rowsToShow.forEach((r, ri) => {
+  g.rows.forEach((r, ri) => {
     const isFirstRow = ri === 0;
     const locId = `loc-${menuNo}-${ri}-${Math.random().toString(36).slice(2, 7)}`;
     html += `
       <tr class="${isFirstRow ? "menu-start" : ""}">
         <td class="col-no">
-          ${isFirstRow ? `
-            <button class="group-toggle" data-group="${escHtml(groupKey)}" title="${isExpanded ? "ย่อกลับ" : "ดูทั้งหมด"}">
-              ${isExpanded ? "▾" : "▸"}
-            </button> ${menuNo}
-          ` : ""}
+          ${isFirstRow ? `<button class="group-toggle" data-group="${escHtml(groupKey)}" title="ย่อกลับ">▾</button> ${menuNo}` : ""}
         </td>
         <td class="col-recipe">${isFirstRow ? `<span class="group-tag">${g.recipe_type}</span> <span class="code">${g.parent_code}</span>` : ""}</td>
         <td class="col-menuname">${isFirstRow ? (g.parent_name || "") : ""}</td>
@@ -340,18 +373,6 @@ function buildGroupRowsHtml(g, menuNo) {
         </td>
       </tr>`;
   });
-
-  if (!isExpanded && hiddenCount > 0) {
-    html += `
-      <tr class="menu-hidden-hint">
-        <td colspan="11">
-          <button class="group-toggle-text" data-group="${escHtml(groupKey)}">
-            + อีก ${hiddenCount} รายการที่ตรงกับ CM POS อยู่แล้ว (ซ่อนไว้ — กดเพื่อดูทั้งหมด)
-          </button>
-        </td>
-      </tr>`;
-  }
-
   html += `
     <tr class="menu-gap">
       <td colspan="8"></td>
