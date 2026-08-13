@@ -17,6 +17,7 @@ let searchTerm = "";
 let currentPageIdx = 0;      // หน้าปัจจุบัน (0-based)
 let searchDebounceTimer = null;
 let expandedGroups = new Set(); // เก็บ key ของเมนูที่ถูกกดขยายดูครบแล้ว (ค่าเริ่มต้น = ย่อไว้หมด)
+let editedValues = {}; // key: `${parentCode}::${ingredientCode}` -> {qty, unit} ที่ผู้ใช้แก้เอง (Phase 2: ส่งชุดนี้เข้า Tampermonkey)
 
 const statusThLabel = {
   green: "ตรงกับ CM POS", yellow: "แปลงหน่วยอัตโนมัติ",
@@ -265,6 +266,7 @@ function renderCurrentPage() {
   bindGroupCopyButtons(container);
   bindLocPopovers(container);
   bindGroupToggles(container);
+  bindEditableCells(container);
   renderPaginationBar(totalPages);
 }
 
@@ -360,7 +362,12 @@ function buildGroupRowsFull(g, menuNo, groupKey) {
         <td class="qty-old">${Number(r.excel_qty).toFixed(4)}</td>
         <td>${r.excel_unit_raw || ""}</td>
         <td><span class="dot dot-${r.status}"></span>${statusThLabel[r.status] || r.status}</td>
-        <td class="qty-new">${r.final_qty ?? "—"} ${r.final_unit || ""}</td>
+        <td class="qty-new">
+          <input type="text" class="qty-edit-input" data-code="${escHtml(r.ingredient_code)}" data-parent="${escHtml(g.parent_code)}"
+                 value="${r.final_qty ?? ""}" placeholder="—">
+          <input type="text" class="unit-edit-input" data-code="${escHtml(r.ingredient_code)}" data-parent="${escHtml(g.parent_code)}"
+                 value="${r.final_unit || ""}" placeholder="หน่วย">
+        </td>
         <td class="note">${r.note || ""}</td>
         <td class="col-loc" style="position:relative;">
           <button class="loc-btn" data-target="${locId}" title="ดูตำแหน่งในไฟล์ต้นฉบับ">ⓘ</button>
@@ -388,6 +395,22 @@ function escHtml(s) {
 }
 
 /** ผูกปุ่มย่อ/ขยายรายการต่อเมนู (ทั้งแบบไอคอนหัวแถว และแบบข้อความ "+N รายการ") */
+/** ผูก input แก้ไข Quantity/Unit ตรงตาราง — เก็บค่าที่แก้ไว้ใน editedValues (Phase 2: ส่งชุดนี้เข้า Tampermonkey แทนค่าที่ระบบคำนวณให้) */
+function bindEditableCells(scope) {
+  scope.querySelectorAll(".qty-edit-input, .unit-edit-input").forEach((inp) => {
+    if (inp.dataset.bound) return;
+    inp.dataset.bound = "1";
+    inp.addEventListener("change", () => {
+      const key = `${inp.dataset.parent}::${inp.dataset.code}`;
+      const qtyInp = inp.closest("td").querySelector(".qty-edit-input");
+      const unitInp = inp.closest("td").querySelector(".unit-edit-input");
+      editedValues[key] = { qty: qtyInp.value.trim(), unit: unitInp.value.trim() };
+      inp.classList.add("edited");
+      showToast("บันทึกค่าที่แก้แล้ว (ใช้ตอนส่งเข้า Tampermonkey)");
+    });
+  });
+}
+
 function bindGroupToggles(scope) {
   scope.querySelectorAll(".group-toggle, .group-toggle-text").forEach((btn) => {
     if (btn.dataset.bound) return;
