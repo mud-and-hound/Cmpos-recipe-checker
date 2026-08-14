@@ -450,6 +450,20 @@ function bindLocPopovers(scope) {
       const pop = document.getElementById(btn.dataset.target);
       const wasHidden = pop.hidden;
       document.querySelectorAll(".loc-popover").forEach((p) => (p.hidden = true));
+      if (wasHidden) {
+        // ⚠️ ย้าย popover ไปแปะที่ <body> ตรงๆ ทุกครั้งที่เปิด — กัน overflow:auto ของ .table-scroll ตัดขอบทิ้ง
+        // (ปัญหาคลาสสิก: absolute-positioned element ใน container ที่มี overflow จะโดน clip ถ้าเนื้อหาล้นกล่อง)
+        if (pop.parentElement !== document.body) document.body.appendChild(pop);
+        const rect = btn.getBoundingClientRect();
+        pop.style.position = "fixed";
+        pop.style.right = "auto"; // ยกเลิกค่า right:0 เดิมจาก CSS ที่ตั้งไว้ตอนอยู่ในบริบท relative — กันชนกับ left ที่ตั้งใหม่
+        pop.style.top = `${rect.bottom + 6}px`;
+        // จัดให้ popover ไม่ล้นขวาจอ — ถ้าตำแหน่งเดิม (ชิดซ้ายปุ่ม) จะล้น ให้เลื่อนมาชิดขวาจอแทน
+        const popWidth = 280; // ตรงกับ .note-popover { width: 280px } ที่ตั้งไว้
+        let left = rect.left;
+        if (left + popWidth > window.innerWidth - 12) left = window.innerWidth - popWidth - 12;
+        pop.style.left = `${Math.max(12, left)}px`;
+      }
       pop.hidden = !wasHidden;
     });
   });
@@ -531,8 +545,8 @@ btnExportEl.addEventListener("click", async () => {
 // Font Picker — โหลดฟอนต์จาก Google Fonts แบบ on-demand + จำค่าไว้
 // ==========================================================
 const FONT_STORAGE_KEY = "cmposRecipeChecker.fonts";
-const DEFAULT_DISPLAY_FONT = "Hind Siliguri";
-const DEFAULT_BODY_FONT = "Mali";
+const DEFAULT_DISPLAY_FONT = "Sarabun"; // ยึด CM POS เป็นหลัก (เว็บเขาใช้ Sarabun ล้วนทั้งเว็บจริง) — ยังเปลี่ยนได้จากปุ่มตั้งค่า
+const DEFAULT_BODY_FONT = "Sarabun";
 const loadedFontLinks = {}; // ชื่อฟอนต์ -> <link> element กันโหลดซ้ำ
 
 function loadGoogleFont(familyName) {
