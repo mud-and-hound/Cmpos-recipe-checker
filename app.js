@@ -256,7 +256,7 @@ function renderCurrentPage() {
       <thead>
         <tr>
           <th>No.</th><th>Recipe</th><th>Name Menu</th><th>Item Code</th><th>Item Description</th>
-          <th>QTY</th><th>Small Unit</th><th>สถานะ</th><th>ค่าที่ถูกต้อง</th><th>เหตุผล</th><th>📍</th>
+          <th>QTY</th><th>Small Unit</th><th>สถานะ</th><th>ค่าที่ถูกต้อง</th><th>📍/❕</th>
         </tr>
       </thead>
       <tbody id="rowsTbody">${bodyHtml}</tbody>
@@ -334,11 +334,11 @@ function buildGroupRowsCollapsed(g, menuNo, groupKey) {
       </td>
       <td class="col-recipe"><span class="group-tag">${g.recipe_type}</span> <span class="code">${g.parent_code}</span></td>
       <td class="col-menuname">${g.parent_name || ""}</td>
-      <td colspan="8" class="menu-summary-text">${summaryHtml}</td>
+      <td colspan="7" class="menu-summary-text">${summaryHtml}</td>
     </tr>
     <tr class="menu-gap">
       <td colspan="8"></td>
-      <td colspan="3" style="text-align:right;">
+      <td colspan="2" style="text-align:right;">
         <button class="group-copy" data-type="${g.recipe_type}" data-code="${g.parent_code}">คัดลอกสำหรับ Tampermonkey</button>
       </td>
     </tr>`;
@@ -350,6 +350,12 @@ function buildGroupRowsFull(g, menuNo, groupKey) {
   g.rows.forEach((r, ri) => {
     const isFirstRow = ri === 0;
     const locId = `loc-${menuNo}-${ri}-${Math.random().toString(36).slice(2, 7)}`;
+    const noteId = `note-${menuNo}-${ri}-${Math.random().toString(36).slice(2, 7)}`;
+    // dropdown หน่วย — ต้องเลือกจาก available_units (หน่วยที่ item นี้มีจริงใน unit_conv_tb) เท่านั้น ห้ามพิมพ์เอง
+    const units = r.available_units && r.available_units.length ? r.available_units : (r.final_unit ? [r.final_unit] : []);
+    const unitOptions = units.map((u) =>
+      `<option value="${escHtml(u)}" ${u === r.final_unit ? "selected" : ""}>${escHtml(u)}</option>`
+    ).join("");
     html += `
       <tr class="${isFirstRow ? "menu-start" : ""}">
         <td class="col-no">
@@ -362,28 +368,37 @@ function buildGroupRowsFull(g, menuNo, groupKey) {
         <td class="qty-old">${Number(r.excel_qty).toFixed(4)}</td>
         <td>${r.excel_unit_raw || ""}</td>
         <td><span class="dot dot-${r.status}"></span>${statusThLabel[r.status] || r.status}</td>
-        <td class="qty-new">
-          <input type="text" class="qty-edit-input" data-code="${escHtml(r.ingredient_code)}" data-parent="${escHtml(g.parent_code)}"
-                 value="${r.final_qty ?? ""}" placeholder="—">
-          <input type="text" class="unit-edit-input" data-code="${escHtml(r.ingredient_code)}" data-parent="${escHtml(g.parent_code)}"
-                 value="${r.final_unit || ""}" placeholder="หน่วย">
+        <td class="qty-new-split">
+          <div class="qty-field">
+            <label>ค่า</label>
+            <input type="text" class="qty-edit-input" data-code="${escHtml(r.ingredient_code)}" data-parent="${escHtml(g.parent_code)}"
+                   value="${r.final_qty ?? ""}" placeholder="—">
+          </div>
+          <div class="unit-field">
+            <label>หน่วย</label>
+            ${units.length
+              ? `<select class="unit-edit-input" data-code="${escHtml(r.ingredient_code)}" data-parent="${escHtml(g.parent_code)}">${unitOptions}</select>`
+              : `<select class="unit-edit-input" data-code="${escHtml(r.ingredient_code)}" data-parent="${escHtml(g.parent_code)}" disabled><option>ไม่มีหน่วยให้เลือก</option></select>`
+            }
+          </div>
         </td>
-        <td class="note">${r.note || ""}</td>
-        <td class="col-loc" style="position:relative;">
-          <button class="loc-btn" data-target="${locId}" title="ดูตำแหน่งในไฟล์ต้นฉบับ">ⓘ</button>
+        <td class="col-icons" style="position:relative;">
+          <button class="loc-btn" data-target="${locId}" title="ดูตำแหน่งในไฟล์ต้นฉบับ">📍</button>
+          <button class="loc-btn note-btn-${r.status}" data-target="${noteId}" title="ดูเหตุผล/หมายเหตุ">❕</button>
           <div class="loc-popover" id="${locId}" hidden>
             <div><b>ไฟล์:</b> ${r.source_file || "—"}</div>
             <div><b>ชีท:</b> ${r.sheet || "—"}</div>
             <div><b>แถวที่:</b> ${r.row_number ?? "—"}</div>
             <div><b>ประเภท:</b> ${g.recipe_type === "WIP" ? "🧪 WIP" : "🍳 Recipe (FG)"}</div>
           </div>
+          <div class="loc-popover note-popover" id="${noteId}" hidden>${r.note || "—"}</div>
         </td>
       </tr>`;
   });
   html += `
     <tr class="menu-gap">
       <td colspan="8"></td>
-      <td colspan="3" style="text-align:right;">
+      <td colspan="2" style="text-align:right;">
         <button class="group-copy" data-type="${g.recipe_type}" data-code="${g.parent_code}">คัดลอกสำหรับ Tampermonkey</button>
       </td>
     </tr>`;
