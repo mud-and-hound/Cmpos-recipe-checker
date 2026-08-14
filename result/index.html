@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ผลการเทียบ — CM POS Recipe Checker</title>
-<link rel="stylesheet" href="../style.css?v=7">
+<link rel="stylesheet" href="../style.css?v=12">
 </head>
 <body>
 
@@ -26,8 +26,9 @@
         <option value="EB Garamond" style="font-family:'EB Garamond',serif;">EB Garamond</option>
       </optgroup>
       <optgroup label="Sans Serif">
+        <option value="Sarabun" style="font-family:'Sarabun',sans-serif;">Sarabun (ค่าเริ่มต้น — ตรงกับ CM POS)</option>
         <option value="Inter" style="font-family:'Inter',sans-serif;">Inter</option>
-        <option value="Hind Siliguri" style="font-family:'Hind Siliguri',sans-serif;">Hind Siliguri (ค่าเริ่มต้น)</option>
+        <option value="Hind Siliguri" style="font-family:'Hind Siliguri',sans-serif;">Hind Siliguri</option>
       </optgroup>
       <optgroup label="Handwriting">
         <option value="Patrick Hand" style="font-family:'Patrick Hand',cursive;">Patrick Hand</option>
@@ -46,7 +47,7 @@
     <label class="settings-label" for="fontBody">ฟอนต์เนื้อหา (ไทย)</label>
     <select class="settings-select" id="fontBody">
       <optgroup label="มีหัว">
-        <option value="Sarabun" style="font-family:'Sarabun',sans-serif;">Sarabun</option>
+        <option value="Sarabun" style="font-family:'Sarabun',sans-serif;">Sarabun (ค่าเริ่มต้น — ตรงกับ CM POS)</option>
         <option value="Trirong" style="font-family:'Trirong',serif;">Trirong</option>
       </optgroup>
       <optgroup label="ไม่มีหัว">
@@ -55,7 +56,7 @@
       </optgroup>
       <optgroup label="ลายมือ">
         <option value="Itim" style="font-family:'Itim',cursive;">Itim</option>
-        <option value="Mali" style="font-family:'Mali',cursive;">Mali (ค่าเริ่มต้น)</option>
+        <option value="Mali" style="font-family:'Mali',cursive;">Mali</option>
       </optgroup>
       <optgroup label="คัดลายมือ">
         <option value="Niramit" style="font-family:'Niramit',sans-serif;">Niramit</option>
@@ -68,7 +69,7 @@
     </select>
 
     <p class="settings-note">เลือกแล้วบันทึกเป็นค่าเริ่มต้นลงเครื่องนี้ให้อัตโนมัติทันที</p>
-    <button class="settings-reset" id="settingsReset">ล้างกลับค่าเริ่มต้น (Hind Siliguri / Mali)</button>
+    <button class="settings-reset" id="settingsReset">ล้างกลับค่าเริ่มต้น (Sarabun — ตรงกับ CM POS)</button>
   </div>
 
   <main>
@@ -121,6 +122,6 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="../app.js?v=7"></script>
+  <script src="../app.js?v=12"></script>
 </body>
 </html>
